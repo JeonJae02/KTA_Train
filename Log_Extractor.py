@@ -28,17 +28,21 @@ class LogExtractor:
         
         print("🔌 [Extractor] InfluxDB 분석용 추출기 연결 완료!")
 
-    def get_data(self, start_time, end_time, target_tags):
+    def get_data(self, start_time, end_time, target_tags=None):
         print(f"🔍 데이터 추출 시작... ({start_time} ~ {end_time})")
         
-        tag_filters = " or ".join([f'r.tag_name == "{tag}"' for tag in target_tags])
+        # 1. 태그 필터 구성 (태그가 있을 때만 필터 추가)
+        tag_filter_query = ""
+        if target_tags:
+            tag_filters = " or ".join([f'r.tag_name == "{tag}"' for tag in target_tags])
+            tag_filter_query = f'|> filter(fn: (r) => {tag_filters})'
 
         # pivot으로 세로 데이터를 가로(Excel) 포맷으로 쫙 펴줌
         flux_query = f"""
         from(bucket: "{self.bucket}")
             |> range(start: {start_time}, stop: {end_time})
             |> filter(fn: (r) => r._measurement == "plc_line2")
-            |> filter(fn: (r) => {tag_filters})
+            {tag_filter_query}
             |> pivot(rowKey:["_time"], columnKey: ["tag_name"], valueColumn: "_value")
             |> drop(columns: ["_start", "_stop", "_measurement"])
         """
@@ -58,6 +62,10 @@ class LogExtractor:
             df['_time'] = df['_time'].dt.tz_localize(None) 
             df.set_index('_time', inplace=True)
             df.index.name = 'Time'
+
+            df = df.sort_index()
+
+            df = df.ffill()
 
         print(f"✅ 추출 완료! 총 {len(df)}행 데이터 확보.")
         return df
@@ -91,9 +99,9 @@ if __name__ == "__main__":
 
     # 2. 원하는 데이터 검색
     my_df = extractor.get_data(
-        start_time="-6h", 
+        start_time="-3h", 
         end_time="now()", 
-        target_tags=["Ana_In___PT_P5"]
+        target_tags=None
     )
 
     # 3. 콘솔에서 살짝 확인
