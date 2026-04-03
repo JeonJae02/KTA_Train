@@ -37,7 +37,7 @@ class LogExtractor:
         flux_query = f"""
         from(bucket: "{self.bucket}")
             |> range(start: {start_time}, stop: {end_time})
-            |> filter(fn: (r) => r._measurement == "plc_data_int")  # 🚨 아까 바꾼 테이블 이름!
+            |> filter(fn: (r) => r._measurement == "plc_line2")
             |> filter(fn: (r) => {tag_filters})
             |> pivot(rowKey:["_time"], columnKey: ["tag_name"], valueColumn: "_value")
             |> drop(columns: ["_start", "_stop", "_measurement"])
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     my_df = extractor.get_data(
         start_time="-6h", 
         end_time="now()", 
-        target_tags=["AL_Warning_Line", "P00030"]
+        target_tags=["Ana_In___PT_P5"]
     )
 
     # 3. 콘솔에서 살짝 확인
