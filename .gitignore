@@ -6,5 +6,6 @@ __pycache__/
 # Extracted Data
 extracted_csv/
 db_log/
+real_time_test_data.csv/
 
 .DS_Store
