@@ -23,7 +23,7 @@ class LogExtractor:
         if not self.token:
             print("❌ [.env 오류] 토큰을 찾을 수 없습니다. .env 파일 경로와 내용을 확인해주세요.")
 
-        self.client = InfluxDBClient(url=self.db_url, token=self.token, org=self.org, timeout=300000)
+        self.client = InfluxDBClient(url=self.db_url, token=self.token, org=self.org, timeout=3000000)
         self.query_api = self.client.query_api()
         
         print("🔌 [Extractor] InfluxDB 분석용 추출기 연결 완료!")
@@ -31,17 +31,29 @@ class LogExtractor:
     def get_data(self, start_time, end_time, target_tags=None):
         print(f"🔍 데이터 추출 시작... ({start_time} ~ {end_time})")
         
-        # 1. 태그 필터를 DB에 맡기지 않습니다. (리스트가 너무 길면 DB가 뻗음)
-        # 쿼리에서는 태그 필터를 제거하여 속도를 확보합니다.
+        # 1. target_tags가 있을 경우, Flux 쿼리용 배열 문자열로 변환
+        # 예: '["g_s_SV_P1", "Ana_Out_P1", ...]'
+        if target_tags:
+            # 큰따옴표로 묶고 쉼표로 연결
+            flux_array_str = "[" + ", ".join([f'"{tag}"' for tag in target_tags]) + "]"
+            
+            # [핵심] contains 함수를 사용해 pivot 이전에 데이터를 확 줄여버립니다!
+            # (or 연산자 수십 개를 쓰는 것보다 수십 배 빠릅니다)
+            filter_query = f'|> filter(fn: (r) => contains(value: r.tag_name, set: {flux_array_str}))'
+        else:
+            filter_query = "" # 태그 지정 안 하면 다 가져옴
+
+        # 2. 최적화된 Flux 쿼리 생성
         flux_query = f"""
         from(bucket: "{self.bucket}")
             |> range(start: {start_time}, stop: {end_time})
             |> filter(fn: (r) => r._measurement == "plc_line2")
+            {filter_query}
             |> pivot(rowKey:["_time"], columnKey: ["tag_name"], valueColumn: "_value")
             |> drop(columns: ["_start", "_stop", "_measurement"])
         """
 
-        # DB에서 통째로 긁어오기 (이게 훨씬 빠릅니다)
+        # DB에 쿼리 요청
         df = self.query_api.query_data_frame(query=flux_query)
         
         if isinstance(df, list):
@@ -58,11 +70,7 @@ class LogExtractor:
             df.index.name = 'Time'
             df = df.sort_index()
             
-            # 2. [핵심] 파이썬 메모리에서 태그 필터링을 수행합니다.
-            if target_tags:
-                # 존재하는 컬럼만 골라내기 (오타나 없는 태그로 인한 에러 방지)
-                existing_tags = [tag for tag in target_tags if tag in df.columns]
-                df = df[existing_tags]
+            # (이제 파이썬 메모리에서 굳이 또 필터링할 필요가 없습니다. 이미 DB에서 걸러서 왔으니까요!)
             
             # 3. 비어있는 값 복원
             df = df.ffill()
