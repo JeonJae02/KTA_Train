@@ -3,6 +3,7 @@ import time
 import pandas as pd
 from influxdb_client import InfluxDBClient
 from dotenv import load_dotenv
+from datetime import datetime, timedelta, timezone
 
 class Fast_LogExtractor:
     def __init__(self, env_path=".env"):
@@ -28,46 +29,118 @@ class Fast_LogExtractor:
         
         print("🔌 [Extractor] InfluxDB 분석용 추출기 연결 완료!")
 
-    def get_data(self, start_time, end_time, target_tags=None):
-        print(f"🔍 데이터 추출 시작... ({start_time} ~ {end_time})")
-        
-        # 1. 태그 필터를 DB에 맡기지 않습니다. (리스트가 너무 길면 DB가 뻗음)
-        # 쿼리에서는 태그 필터를 제거하여 속도를 확보합니다.
-        flux_query = f"""
-        from(bucket: "{self.bucket}")
-            |> range(start: {start_time}, stop: {end_time})
-            |> filter(fn: (r) => r._measurement == "plc_line2")
-            |> pivot(rowKey:["_time"], columnKey: ["tag_name"], valueColumn: "_value")
-            |> drop(columns: ["_start", "_stop", "_measurement"])
+    def _parse_time(self, t_str):
         """
-
-        # DB에서 통째로 긁어오기 (이게 훨씬 빠릅니다)
-        df = self.query_api.query_data_frame(query=flux_query)
+        입력된 시간 문자열을 분석하여 UTC datetime 객체로 반환합니다.
+        1. now() / 상대시간(-5d 등) 처리
+        2. UTC ISO 포맷(Z 포함) 처리 -> 변환 건너뜀
+        3. 일반 날짜 문자열 처리 -> KST로 간주하고 UTC로 변환
+        """
+        now = datetime.now(timezone.utc)
         
-        if isinstance(df, list):
-            if len(df) == 0:
-                print("⚠️ 해당 조건의 데이터가 없습니다.")
-                return pd.DataFrame()
-            df = pd.concat(df)
+        if t_str == "now()":
+            return now
+            
+        if isinstance(t_str, str):
+            # 1. 상대 시간 파싱 (-6h, -5d 등)
+            if t_str.startswith("-"):
+                val = int(''.join(filter(str.isdigit, t_str)))
+                unit = t_str[-1]
+                if unit == 'd': return now - timedelta(days=val)
+                if unit == 'h': return now - timedelta(hours=val)
+                if unit == 'm': return now - timedelta(minutes=val)
+                return now - timedelta(hours=val)
 
-        if not df.empty and '_time' in df.columns:
-            # 시간 처리 및 정렬
+            # 2. UTC ISO 포맷 체크 (Z가 붙어있으면 이미 UTC임)
+            if 'Z' in t_str.upper() or '+00:00' in t_str:
+                # pd.to_datetime이 알아서 UTC로 인식함
+                return pd.to_datetime(t_str).to_pydatetime()
+
+        # 3. 그 외 (예: "2026-04-10 13:00:00") -> KST로 간주하고 UTC로 변환
+        try:
+            return pd.to_datetime(t_str).tz_localize('Asia/Seoul').tz_convert('UTC').to_pydatetime()
+        except Exception as e:
+            print(f"⚠️ 시간 파싱 주의: {t_str}를 UTC로 변환하는 중 오류 발생, 원문 사용 시도. ({e})")
+            return pd.to_datetime(t_str).to_pydatetime()
+
+    def get_data(self, start_time, end_time, target_tags=None):
+        start_dt = self._parse_time(start_time)
+        end_dt = self._parse_time(end_time)
+        
+        print(f"🚀 추출 시작: {start_dt.strftime('%Y-%m-%d %H:%M:%S')} ~ {end_dt.strftime('%Y-%m-%d %H:%M:%S')} (KST 기준)")
+
+        all_chunks = []
+        current_start = start_dt
+        chunk_delta = timedelta(hours=6) # 6시간 단위
+        
+        # 2. 6시간씩 끊어서 루프 돌기
+        while current_start < end_dt:
+            current_end = min(current_start + chunk_delta, end_dt)
+            
+            # RFC3339 형식 문자열로 변환
+            str_start = current_start.strftime('%Y-%m-%dT%H:%M:%SZ')
+            str_end = current_end.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+            print(f"📦 [Chunk 요청] {str_start} ~ {str_end} ...", end=" ", flush=True)
+
+            flux_query = f"""
+            from(bucket: "{self.bucket}")
+                |> range(start: {str_start}, stop: {str_end})
+                |> filter(fn: (r) => r._measurement == "plc_line2")
+                |> pivot(rowKey:["_time"], columnKey: ["tag_name"], valueColumn: "_value")
+                |> drop(columns: ["_start", "_stop", "_measurement"])
+            """
+
+            try:
+                # DB에서 긁어오기
+                chunk_df = self.query_api.query_data_frame(query=flux_query)
+                
+                if isinstance(chunk_df, list):
+                    if len(chunk_df) > 0:
+                        chunk_df = pd.concat(chunk_df)
+                    else:
+                        chunk_df = pd.DataFrame()
+
+                if not chunk_df.empty:
+                    # 3. [최적화] 각 청크별로 메모리 소모를 줄이기 위해 즉시 태그 필터링
+                    if target_tags:
+                        existing_tags = [tag for tag in target_tags if tag in chunk_df.columns]
+                        # '_time' 컬럼은 합칠 때 필요하므로 유지
+                        cols_to_keep = ['_time'] + existing_tags if '_time' in chunk_df.columns else existing_tags
+                        chunk_df = chunk_df[cols_to_keep]
+                    
+                    all_chunks.append(chunk_df)
+                    print(f"성공 ({len(chunk_df)}행)")
+                else:
+                    print("데이터 없음")
+
+            except Exception as e:
+                print(f"실패 ❌ : {e}")
+
+            current_start = current_end
+
+        # 4. 전체 데이터 통합 및 전처리
+        if not all_chunks:
+            print("⚠️ 수집된 데이터가 하나도 없습니다.")
+            return pd.DataFrame()
+
+        print("🔄 데이터 통합 및 KST 변환 중...")
+        df = pd.concat(all_chunks, ignore_index=True)
+
+        if '_time' in df.columns:
             df['_time'] = pd.to_datetime(df['_time']).dt.tz_convert('Asia/Seoul')
             df['_time'] = df['_time'].dt.tz_localize(None) 
             df.set_index('_time', inplace=True)
             df.index.name = 'Time'
             df = df.sort_index()
             
-            # 2. [핵심] 파이썬 메모리에서 태그 필터링을 수행합니다.
-            if target_tags:
-                # 존재하는 컬럼만 골라내기 (오타나 없는 태그로 인한 에러 방지)
-                existing_tags = [tag for tag in target_tags if tag in df.columns]
-                df = df[existing_tags]
+            # 중복 시간 제거 (청크 경계면 중복 방지)
+            df = df[~df.index.duplicated(keep='first')]
             
-            # 3. 비어있는 값 복원
+            # 비어있는 값 복원
             df = df.ffill()
 
-        print(f"✅ 추출 완료! 총 {len(df)}행, {len(df.columns)}개 컬럼 확보.")
+        print(f"✅ 최종 추출 완료! 총 {len(df)}행, {len(df.columns)}개 컬럼 확보.")
         return df
 
     def save_to_csv(self, df, save_dir="./extracted_csv"):

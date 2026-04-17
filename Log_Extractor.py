@@ -30,19 +30,38 @@ class LogExtractor:
         print("🔌 [Extractor] InfluxDB 분석용 추출기 연결 완료!")
 
     def _parse_time(self, t_str):
-        """InfluxDB 시간 문자열(-5d, now() 등)을 datetime 객체(UTC)로 변환"""
+        """
+        입력된 시간 문자열을 분석하여 UTC datetime 객체로 반환합니다.
+        1. now() / 상대시간(-5d 등) 처리
+        2. UTC ISO 포맷(Z 포함) 처리 -> 변환 건너뜀
+        3. 일반 날짜 문자열 처리 -> KST로 간주하고 UTC로 변환
+        """
         now = datetime.now(timezone.utc)
+        
         if t_str == "now()":
             return now
-        if isinstance(t_str, str) and t_str.startswith("-"):
-            val = int(''.join(filter(str.isdigit, t_str)))
-            unit = t_str[-1]
-            if unit == 'd': return now - timedelta(days=val)
-            if unit == 'h': return now - timedelta(hours=val)
-            if unit == 'm': return now - timedelta(minutes=val)
-            return now - timedelta(days=val)
-        # 절대 시간 문자열 처리 (KST -> UTC)
-        return pd.to_datetime(t_str).tz_localize('Asia/Seoul').tz_convert('UTC')
+            
+        if isinstance(t_str, str):
+            # 1. 상대 시간 파싱 (-6h, -5d 등)
+            if t_str.startswith("-"):
+                val = int(''.join(filter(str.isdigit, t_str)))
+                unit = t_str[-1]
+                if unit == 'd': return now - timedelta(days=val)
+                if unit == 'h': return now - timedelta(hours=val)
+                if unit == 'm': return now - timedelta(minutes=val)
+                return now - timedelta(hours=val)
+
+            # 2. UTC ISO 포맷 체크 (Z가 붙어있으면 이미 UTC임)
+            if 'Z' in t_str.upper() or '+00:00' in t_str:
+                # pd.to_datetime이 알아서 UTC로 인식함
+                return pd.to_datetime(t_str).to_pydatetime()
+
+        # 3. 그 외 (예: "2026-04-10 13:00:00") -> KST로 간주하고 UTC로 변환
+        try:
+            return pd.to_datetime(t_str).tz_localize('Asia/Seoul').tz_convert('UTC').to_pydatetime()
+        except Exception as e:
+            print(f"⚠️ 시간 파싱 주의: {t_str}를 UTC로 변환하는 중 오류 발생, 원문 사용 시도. ({e})")
+            return pd.to_datetime(t_str).to_pydatetime()
 
     def get_data(self, start_time, end_time, target_tags=None):
         # 1. 시간 범위를 datetime 객체로 변환
