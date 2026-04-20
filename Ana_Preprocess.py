@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 
 class VirtualSensorPreprocessor:
-    def __init__(self, feature_cols, pump_id='P1', robot_id='RB1'):
+    def __init__(self, feature_cols, pump_id='P1', tank_id='P1', robot_id='RB1'):
         """
         초기화 단계: 가상 센서가 사용하는 컬럼 순서를 저장합니다.
         """
         self.feature_cols = feature_cols
         self.pump_id = pump_id
+        self.tank_id = tank_id
         self.robot_id = robot_id
         
         # 🧠 상태 기억용 변수들 (Memory)
@@ -86,7 +87,7 @@ class VirtualSensorPreprocessor:
             'Prev_SV': self.prev_sv,
             'Prev_SV_Diff': sv - self.prev_sv,
             f'Ana_Out_{self.pump_id}': raw_tick.get(f'Ana_Out_{self.pump_id}', 0.0),
-            f'TK_Temp_PV_P1': raw_tick.get('TK_Temp_PV_P1', 0.0), # 탱크 온도는 임시 하드코딩
+            f'TK_Temp_PV_{self.tank_id}': raw_tick.get(f'TK_Temp_PV_{self.tank_id}', 0.0), # 탱크 온도는 임시 하드코딩
             f'Scale_Out___PT_{self.pump_id}': pt,
             'Rolling_PT_Max_3': rolling_pt_max_3,
             'Rolling_PT_Diff_3': rolling_pt_diff_3,
