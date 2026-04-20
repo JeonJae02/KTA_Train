@@ -133,7 +133,8 @@ if __name__ == "__main__":
             f'Scale_Out___FT_{pid}', 
             f'TK_Temp_PV_{tank_id}',
             'Phase_Start', 
-            'Phase_Steady'
+            'Phase_Steady',
+            'Phase_Transition'
         ]
 
         # X: 순수 물리 피처 7개만 쏙 뽑기
