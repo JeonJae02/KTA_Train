@@ -1,0 +1,90 @@
+{
+    "system_mode": "IDLE",
+    "timestamp": "2026-04-20 16:17:24",
+    "Relay_Data": {
+        "워킹 Tank 1 BACK": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 2-1 SOFT": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 3-1 고탄성": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 2-2 HARD": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 3-2 CUSH": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 1 ISO": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF",
+            "Agitator MC": "OFF"
+        },
+        "워킹 Tank 2-2 MDI": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        },
+        "워킹 Tank 3 ISO": {
+            "Cooling SOL": "OFF",
+            "Exchanger SOL": "OFF",
+            "Agitator MC": "OFF",
+            "Heater": "OFF",
+            "Feeding SOL": "OFF"
+        }
+    },
+    "Pump_Digital_Twin": {
+        "P1": {"real_ana": 120, "predict_ana": 118, "real_pt": 200, "predict_pt": 205},
+        "P2": {"real_ana": 90,  "predict_ana": 91,  "real_pt": 150, "predict_pt": 149},
+        "P3": {"real_ana": 110, "predict_ana": 108, "real_pt": 180, "predict_pt": 182},
+        "P4": {"real_ana": 130, "predict_ana": 128, "real_pt": 220, "predict_pt": 215},
+        "P5": {"real_ana": 95,  "predict_ana": 97,  "real_pt": 160, "predict_pt": 158},
+        "P6": {"real_ana": 105, "predict_ana": 103, "real_pt": 170, "predict_pt": 168},
+        "P7": {"real_ana": 115, "predict_ana": 112, "real_pt": 190, "predict_pt": 195},
+        "I1": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I2": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I3": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I4": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I5": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I6": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0},
+        "I7": {"real_ana": 0,   "predict_ana": 0,   "real_pt": 0,   "predict_pt": 0}
+    },
+    "Pump_Anomaly": {
+        "is_anomaly": true,
+        "alerts": [
+        "🚨 [P1 펌프 / 45틱] 전류 누수 감지 (손실률: 12%)",
+        "🚨 [P2 펌프] Autoencoder 재건 오차 한계 돌파"
+        ]
+    },
+    "Conveyor_Health": {
+        "15": 98.5,
+        "16": 82.1,
+        "42": 95.0
+    }
+}
