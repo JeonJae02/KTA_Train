@@ -25,6 +25,7 @@ from datetime import datetime, timedelta
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 # 한글 라벨이 깨지지 않게 (Windows 기본 탑재 폰트).
@@ -36,7 +37,7 @@ sys.path.insert(0, ROOT_DIR)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from Log_Extractor import LogExtractor
-from PLC_Signed_Convert import to_signed16
+from parkkt.code_ongoing.PLC_Signed_Convert import to_signed16
 
 ENV_PATH = os.path.join(ROOT_DIR, ".env")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -44,6 +45,11 @@ SAVE_DIR = os.path.join(BASE_DIR, "extracted_csv")
 OUT_DIR = os.path.join(BASE_DIR, "analysis_out")
 
 FACTOR_NAMES = ("heat", "cool", "exchanger", "feeding")
+
+#: 사이클 카운터. 1 부터 42 까지 1씩 오르다가 42 에서 1 로 리셋된다 (0 은 안 나온다).
+#: 탱크별 신호가 아니라 라인 공통이라, 모든 탱크 CSV 에 같은 값이 들어간다 —
+#: 그래야 CSV 하나만 열어도 사이클을 끊을 수 있다.
+WAGON_TAG = "Now_Actual_Wagon_Num"
 
 TANKS = {
     "P1": {
@@ -104,18 +110,54 @@ TANKS = {
     },
 }
 
+#: 수위(level)는 위의 한글 태그들과 달리 탱크 키와 정확히 1:1 로 규칙적이라
+#: 일일이 적지 않고 붙인다. heat/cool 처럼 이진값이 아니라 연속값이므로
+#: FACTOR_NAMES 에는 넣지 않는다 (그래프도 계단이 아니라 선으로 그려야 한다).
+#:
+#: **`TK_Level_PV_*` 는 정수로 반올림된 값이다.** 실측하면 센서 자체의 잡음은
+#: 0.04~0.08 인데 정수화가 ±0.5 오차를 집어넣고 있다 — 버려지는 게 노이즈가
+#: 아니라 실제 신호다. 그래서 원시 아날로그값에서 실수 수위(`level_f`)를 같이
+#: 계산한다. 해상도가 38~67배 올라간다 (고유값 10~15개 -> 377~940개).
+#: `Scale_Out___LT_*` 는 쓰면 안 된다 — PLC 가 이미 정수로 만든 값이라 이득이 없다.
+LEVEL_COMPONENTS = ("Ana_In", "Ana_Max", "Scale_Max", "Gain", "OffSet")
+
+for _key, _cfg in TANKS.items():
+    _cfg["level"] = f"TK_Level_PV_{_key}"
+    for _c in LEVEL_COMPONENTS:
+        _cfg[f"lt_{_c}"] = f"{_c}___LT_{_key}"
+
 DEFAULT_START = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d 00:00:00")
 DEFAULT_END = "now()"
 
 
+def add_level_float(df, cfg):
+    """정수 수위 대신 원시 아날로그값에서 실수 수위를 계산해 `level_f` 로 붙인다.
+
+    Scale_Out = (Ana_In / Ana_Max) * Scale_Max * (Gain/1000) + OffSet
+
+    현재 설정은 8개 탱크 전부 Ana_Max=10000, Scale_Max=100, Gain=1000, OffSet=0
+    이라 결과적으로 `Ana_In/100` 이 되지만, **그렇게 하드코딩하면 안 된다** —
+    온도 쪽 Scale_Max 가 4월 100 에서 지금 1000 으로 바뀐 전례가 있다.
+    """
+    cols = {c: to_signed16(df[cfg[f"lt_{c}"]]) for c in LEVEL_COMPONENTS}
+    ana_max = cols["Ana_Max"].replace(0, np.nan)   # 0 이면 미설정 채널
+    df["level_f"] = ((cols["Ana_In"] / ana_max) * cols["Scale_Max"]
+                     * (cols["Gain"] / 1000) + cols["OffSet"])
+    # 원시 부품은 계산에 다 들어갔으므로 버린다 (4개는 상수, Ana_In 은 level_f 에 담겼다).
+    # 남겨두면 CSV 가 40% 커지는데 얻는 정보가 없다.
+    return df.drop(columns=[cfg[f"lt_{c}"] for c in LEVEL_COMPONENTS])
+
+
 def fetch_tank(extractor, tank_key, cfg, start_time, end_time):
-    tags = [cfg["temp"]] + [cfg[f] for f in FACTOR_NAMES]
+    tags = ([cfg["temp"], cfg["level"]] + [cfg[f] for f in FACTOR_NAMES]
+            + [cfg[f"lt_{c}"] for c in LEVEL_COMPONENTS] + [WAGON_TAG])
     df = extractor.get_data(start_time=start_time, end_time=end_time, target_tags=tags)
     if df.empty:
         print(f"⚠️ [{tank_key}] 데이터가 없습니다.")
         return None
 
     df[cfg["temp"]] = to_signed16(df[cfg["temp"]])
+    df = add_level_float(df, cfg)
 
     os.makedirs(SAVE_DIR, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")

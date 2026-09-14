@@ -14,3 +14,6 @@ Ana_csv/
 Ana_models/
 anomaly_models/
 PT_models/
+
+parkkt/analysis_out/
+parkkt/extracted_csv/
