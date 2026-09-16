@@ -53,7 +53,7 @@ EXCLUDE_HOURS = (0, 7)
 RUNNING_WINDOW_MIN = 30       # wagon 이 이 시간 안에 안 움직이면 라인 정지
 MIN_EVENT_SEC = 5             # I2/I3 펄스가 중앙값 7.3초라 10초로 잡으면 안 된다
 TAIL_SEC = 60                 # 이벤트 종료 후 수위 반응을 더 보는 시간
-OUTFLOW_PRE_SEC = 120         # 유출률을 재는 구간
+OUTFLOW_PRE_SEC = 90         # 유출률을 재는 구간
 
 BASELINE_WINDOW = 30          # 이동 기준선에 쓸 직전 이벤트 수
 Z_CLIP = 4.0                  # 튀는 이벤트 하나로 CUSUM 이 폭발하는 걸 막는다
@@ -177,6 +177,8 @@ def extract_events(tank_key):
         })
 
     return pd.DataFrame(rows), src, noise
+
+
 
 
 # --------------------------------------------------------------------------- #
