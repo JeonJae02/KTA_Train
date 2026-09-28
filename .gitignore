@@ -17,3 +17,12 @@ PT_models/
 
 parkkt/analysis_out/
 parkkt/extracted_csv/
+parkkt/Whole_Data_Extractor.py
+parkkt/Whole_Data_Extraction.ipynb
+parkkt/Tank_Temp_Factor_Analysis.py
+parkkt/A2VK-REXROTH.pdf
+
+parkkt/cache/
+
+*.pth
+*.pkl
