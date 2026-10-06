@@ -15,15 +15,6 @@ import pandas as pd
 # ==========================================
 # 펌프 -> 헤드/로봇/로컬SEL슬롯 매핑 (실데이터로 검증된 것만)
 # ==========================================
-<<<<<<< HEAD
-PUMP_MAP = {
-    "P1": {"head": "HD1", "robot": "RB1", "sel_slot": 1},
-    "P2": {"head": "HD1", "robot": "RB1", "sel_slot": 2},
-    "P5": {"head": "HD3", "robot": "RB2", "sel_slot": 1},
-    "P6": {"head": "HD3", "robot": "RB2", "sel_slot": 2},
-    "P7": {"head": "HD4", "robot": "RB2", "sel_slot": 1},
-    # P3, P4(HD2)는 Shot_P{n}_SEL_HD2 매핑이 아직 검증 안 됨 - 보류
-=======
 #: 각 펌프가 실제로 사출하는 순간은 `Shot_Injection_HD{head}_P{slot}` 이 알려준다.
 #: (예전에 쓰던 `Shot_P{n}_SEL_HD{h}` 는 "선택됨" 구간이라 사출 순간보다 2배 넓다.)
 #: 실측으로 확인한 로컬슬롯 -> 글로벌펌프 대응:
@@ -43,7 +34,6 @@ PUMP_MAP = {
     "P5": {"head": "HD3", "robot": "RB2", "slot": 1, "tank": "P3"},
     "P6": {"head": "HD3", "robot": "RB2", "slot": 2, "tank": "P1"},
     "P7": {"head": "HD4", "robot": "RB2", "slot": 1, "tank": "P5"},
->>>>>>> 55455499c6ae61ac41ec7c44005ef26c4596d18c
 }
 
 RAMP_THRESHOLD_PCT = 0.05      # 증압완료 판정: |FT-SV|/SV <= 5%
@@ -56,14 +46,11 @@ DECAY_WINDOW_SEC = 3.0         # BuildUp off 직후 감쇠 기울기 계산 구�
 #: 진짜 신호이므로 살려둔다.
 MIN_DECAY_POINTS = 3
 DIP_THRESHOLD_PCT = 0.03       # 안정구간 dip 판정: 직전 롤링평균 대비 3% 이상 하락
-<<<<<<< HEAD
-=======
 #: 사출이 일으키는 압력 딥은 신호가 꺼진 뒤에도 이어진다. 실측(P1 사출 3265건 평균):
 #:   사출시작 +0틱 PT -3.5 / +1틱 -9.4(최저) / +2틱 -6.2 / +3틱 -0.8 / +4틱 -0.2
 #: Injection 신호 자체는 평균 2.4틱만 켜지므로, 신호 구간만 "설명됨"으로 보면
 #: 회복 중 하락이 유출로 잘못 잡힌다. 사출 시작 후 이만큼은 설명된 구간으로 친다.
 INJECTION_DIP_TICKS = 4
->>>>>>> 55455499c6ae61ac41ec7c44005ef26c4596d18c
 STEADY_TICK_MIN = 2            # Tick_Index >= 2 부터 Phase_Steady
 DAILY_EXCLUDE_START = "23:50"
 #: 06:45 로 잡았을 때 06시대(=06:45~07:00 에 시작한 사이클) 이상률이 7.77% 로
@@ -91,18 +78,10 @@ def extract_cycle_features(raw_df, pump_id):
     tag_PT = f"Scale_Out___PT_{pump_id}"
     tag_FT = f"Scale_Out___FT_{pump_id}"
     tag_Ana = f"Ana_Out_{pump_id}"
-<<<<<<< HEAD
-    tag_Temp = "TK_Temp_PV_" + pump_id
-    tag_BuildUp = f"Pump_BuildUp_{pump_id}"
-    tag_Hz = f"Hz_Out_{pump_id}"
-    tag_ShotSel = f"Shot_P{info['sel_slot']}_SEL_{info['head']}"
-    shot_tags = [f"{info['head']}_FOAMING_SHOT{k}" for k in range(1, 7)]
-=======
     tag_Temp = "TK_Temp_PV_" + info["tank"]   # 탱크 번호 != 펌프 번호 (PUMP_MAP 주석 참고)
     tag_BuildUp = f"Pump_BuildUp_{pump_id}"
     tag_Hz = f"Hz_Out_{pump_id}"
     tag_ShotInj = f"Shot_Injection_{info['head']}_P{info['slot']}"
->>>>>>> 55455499c6ae61ac41ec7c44005ef26c4596d18c
 
     df = raw_df.ffill().fillna(0).copy()
     df = df.reset_index().rename(columns={df.index.name or "Time": "Time"})
@@ -133,14 +112,6 @@ def extract_cycle_features(raw_df, pump_id):
     # 안정구간 rolling 통계용 tick index (사이클 내부, 자르기 전엔 계산 불가하므로 임시)
     df["Tick_Index_tmp"] = df.groupby("Cycle_ID").cumcount()
 
-<<<<<<< HEAD
-    # SHOT 소유권: 이 펌프 소유의 SHOT 신호가 하나라도 켜져 있는지
-    df["Shot_Owned_Active"] = 0
-    if tag_ShotSel in df.columns:
-        owned = df[tag_ShotSel] != 0
-        any_shot = df[shot_tags].sum(axis=1) != 0
-        df["Shot_Owned_Active"] = (owned & any_shot).astype(int)
-=======
     # 이 펌프가 실제로 사출한 순간 + 그 여파가 남는 구간까지를 "설명된 하락"으로 본다.
     # (사출 신호는 평균 2.4틱만 켜지는데 압력 딥은 +3틱까지 이어지므로 뒤로 늘려준다.)
     df["Shot_Owned_Active"] = 0
@@ -150,7 +121,6 @@ def extract_cycle_features(raw_df, pump_id):
         for k in range(1, INJECTION_DIP_TICKS + 1):
             spread |= inj.shift(k, fill_value=False)
         df["Shot_Owned_Active"] = spread.astype(int)
->>>>>>> 55455499c6ae61ac41ec7c44005ef26c4596d18c
 
     # ==========================================
     # 3. Cycle 메타(시작/끝 시각, AL_Line_Bit, 제외 여부) 계산
@@ -208,13 +178,10 @@ def extract_cycle_features(raw_df, pump_id):
             "PreBuildUp_FT": seg["PreBuildUp_FT"].iloc[0],
             "PT_Jump_From_Pre": seg[tag_PT].iloc[0] - seg["PreBuildUp_PT"].iloc[0],
             "FT_Jump_From_Pre": seg[tag_FT].iloc[0] - seg["PreBuildUp_FT"].iloc[0],
-<<<<<<< HEAD
-=======
             # 감쇠가 시작되는 지점의 값. Decay_Slope_* 가 이 값에 끌려다니므로
             # (PT 상관 -0.530, FT 상관 -0.888) 정규화의 기준 변수로 쓴다.
             "PT_at_End": seg[tag_PT].iloc[-1],
             "FT_at_End": seg[tag_FT].iloc[-1],
->>>>>>> 55455499c6ae61ac41ec7c44005ef26c4596d18c
         }
 
         # Instant_FT_Error_Rate, Cum_FT_Error
