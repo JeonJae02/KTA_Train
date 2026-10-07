@@ -1,0 +1,166 @@
+{
+ "version": "2026-10-07",
+ "generated_by": "make_pump_settings.py",
+ "params": {
+  "T_REF": 22.0,
+  "TEMP_SCALE": 10.0,
+  "VISC_TABLE_RAW": [
+   150,
+   400
+  ],
+  "STEADY_MIN": 5,
+  "INJ_TICKS": 4,
+  "MIN_CYCLE_TICKS": 8,
+  "MIN_CLEAN_TICKS": 3,
+  "TCROSS_BAND": 0.03,
+  "TSELF_LEVEL": 0.95,
+  "KNEE_FRAC": 0.2,
+  "DECAY_WINDOW_SEC": 5.0,
+  "DECAY_PT_FLOOR": [
+   2.0,
+   3.0
+  ],
+  "DECAY_FT_FLOOR_FROM": 3.0,
+  "DECAY_MIN_TICKS": 4,
+  "CIRC_HZ": 2000,
+  "CIRC_MIN_FT": 300,
+  "K_SCALE": 100000.0,
+  "R_EARLY_SEC": 1.6,
+  "R_EARLY_TH": 0.7,
+  "FT_TIMEOUT_SEC": 3.0
+ },
+ "materials": {
+  "TM-337": {
+   "type": "POL",
+   "B": 5756.0,
+   "desc": "폴리올 BACK"
+  },
+  "AM-315": {
+   "type": "POL",
+   "B": 5418.0,
+   "desc": "폴리올 CUSH"
+  },
+  "MBR-360": {
+   "type": "POL",
+   "B": 5360.0,
+   "desc": "폴리올 고탄성"
+  },
+  "TM-20": {
+   "type": "ISO",
+   "B": 1921.0,
+   "desc": "ISO"
+  },
+  "MC-70": {
+   "type": "ISO",
+   "B": 2781.0,
+   "desc": "ISO"
+  }
+ },
+ "pumps": {
+  "P1": {
+   "material": "TM-337",
+   "tank": "P1",
+   "head": "HD1",
+   "slot": 1,
+   "verified": true
+  },
+  "I1": {
+   "material": "TM-20",
+   "tank": "I1",
+   "head": "HD1",
+   "slot": 1,
+   "verified": true
+  },
+  "P2": {
+   "material": null,
+   "tank": "P5",
+   "head": "HD1",
+   "slot": 2,
+   "verified": false
+  },
+  "P3": {
+   "material": null,
+   "tank": "P2",
+   "head": "HD2",
+   "slot": 1,
+   "verified": false
+  },
+  "P4": {
+   "material": null,
+   "tank": "P4",
+   "head": "HD2",
+   "slot": 2,
+   "verified": false
+  },
+  "P5": {
+   "material": null,
+   "tank": "P3",
+   "head": "HD3",
+   "slot": 1,
+   "verified": false
+  },
+  "P6": {
+   "material": null,
+   "tank": "P1",
+   "head": "HD3",
+   "slot": 2,
+   "verified": false
+  },
+  "P7": {
+   "material": null,
+   "tank": "P5",
+   "head": "HD4",
+   "slot": 1,
+   "verified": false
+  },
+  "I2": {
+   "material": null,
+   "tank": "I3",
+   "head": "HD1",
+   "slot": 2,
+   "verified": false
+  },
+  "I3": {
+   "material": null,
+   "tank": "I2",
+   "head": "HD2",
+   "slot": 1,
+   "verified": false
+  },
+  "I4": {
+   "material": null,
+   "tank": "I2",
+   "head": "HD2",
+   "slot": 2,
+   "verified": false
+  },
+  "I5": {
+   "material": null,
+   "tank": "I3",
+   "head": "HD3",
+   "slot": 1,
+   "verified": false
+  },
+  "I6": {
+   "material": null,
+   "tank": "I1",
+   "head": "HD3",
+   "slot": 2,
+   "verified": false
+  },
+  "I7": {
+   "material": null,
+   "tank": "I3",
+   "head": "HD4",
+   "slot": 1,
+   "verified": false
+  }
+ },
+ "alarm_tags": [
+  "AL_Line_Bit",
+  "AL_MA_Bit",
+  "AL_Tank_Bit",
+  "AL_ETC_Bit"
+ ],
+ "run_tag": "Auto_Running"
+}
