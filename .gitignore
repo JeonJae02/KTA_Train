@@ -26,3 +26,5 @@ parkkt/cache/
 
 *.pth
 *.pkl
+# 데이터 캐시 (원본·피처) — 다시 만들 수 있고 수백 MB 라 올리지 않는다
+cache/

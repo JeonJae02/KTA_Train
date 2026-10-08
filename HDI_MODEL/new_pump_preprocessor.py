@@ -80,6 +80,21 @@ class ViscosityTable:
         return out
 
 
+def pump_tags(pump, settings):
+    """펌프 태그 이름 (원료 검증 여부와 무관 — 데이터 추출용으로도 쓴다)."""
+    pc = settings["pumps"][pump]
+    tags = {"bu": f"Pump_BuildUp_{pump}", "sv": f"g_s_SV_{pump}", "hz": f"Hz_Out_{pump}",
+            "ft": f"Scale_Out___FT_{pump}", "pt": f"Scale_Out___PT_{pump}",
+            "tt": f"Scale_Out___TT_{pc['tank']}",                 # 원료 탱크 기준 (P2 → TT_P5)
+            "shot": f"Shot_Injection_{pc['head']}_P{pc['slot']}"}  # ISO 는 같은 번호 폴리올과 공유
+    return tags
+
+
+def required_tags(pump, settings):
+    """LogExtractor.get_data 에 넣을 태그 목록 — 펌프 태그 + 알람 4개 + Auto_Running."""
+    return list(pump_tags(pump, settings).values()) + list(settings["alarm_tags"]) + [settings["run_tag"]]
+
+
 class PumpSetup:
     """펌프 한 대의 실행 설정 — 태그, 원료, 파라미터, 점도표. 프로세스 시작 때 한 번 만든다."""
 
@@ -89,15 +104,15 @@ class PumpSetup:
             raise KeyError(f"{pump} 가 설정에 없음")
         pc = s["pumps"][pump]
         if pc["material"] is None or (not pc["verified"] and not allow_unverified):
-            raise ValueError(f"{pump}: 원료·온도 태그 미확인 (make_pump_settings.py 의 PUMPS 를 채울 것)")
+            raise ValueError(f"{pump}: 원료 점도 미검증 ({pc.get('material_basis')}) — "
+                             f"검증 전에 쓰려면 allow_unverified=True (make_pump_settings.py 의 MATERIAL_OF 참고)")
         mat = s["materials"][pc["material"]]
         self.pump, self.material_name, self.material, self.B = pump, pc["material"], mat["type"], mat["B"]
-        self.p = SimpleNamespace(**s["params"])
-        self.tags = {"bu": f"Pump_BuildUp_{pump}", "sv": f"g_s_SV_{pump}", "hz": f"Hz_Out_{pump}",
-                     "ft": f"Scale_Out___FT_{pump}", "pt": f"Scale_Out___PT_{pump}",
-                     "tt": f"Scale_Out___TT_{pc['tank']}",                 # 원료 탱크 기준 (P2 → TT_P5)
-                     "shot": f"Shot_Injection_{pc['head']}_P{pc['slot']}"}  # ISO 는 같은 번호 폴리올과 공유
+        self.p = SimpleNamespace(**{**s["params"], **pc.get("params", {})})   # 펌프별 덮어쓰기 우선
+        self.tags = pump_tags(pump, s)
         self.alarm_tags, self.run_tag = s["alarm_tags"], s["run_tag"]
+        self.verified = pc["verified"]
+        self.circ_hz = float(pc.get("circ_hz", self.p.CIRC_HZ))   # 순환 Hz 지령 (P1/I1 20, I7 30, 나머지 25)
         self.visc = ViscosityTable(self.B, self.p.T_REF, self.p.VISC_TABLE_RAW, self.p.TEMP_SCALE)
         self.settings_version = s.get("version")
 
@@ -109,6 +124,18 @@ class PumpSetup:
 # --------------------------------------------------------------------------- #
 # 기준선 (정상 구간에서 학습 → 펌프별 JSON)
 # --------------------------------------------------------------------------- #
+def _robust_lstsq(X, y, k=5.0, floor=0.005):
+    """최소제곱 → 상대잔차가 중앙값에서 k·MAD(최소 floor) 넘게 벗어난 점을 빼고 한 번 더.
+    기준 구간에 섞인 비정상 사이클(FT≈0, 공기 혼입 등)이 계수를 끌고 가지 않게 한다 (P7: 4% 가 FT/Hz≈0)."""
+    X, y = np.asarray(X, float), np.asarray(y, float)
+    coef = np.linalg.lstsq(X, y, rcond=None)[0]
+    rel = y / (X @ coef) - 1.0
+    mad = np.median(np.abs(rel - np.median(rel))) * 1.4826
+    keep = np.abs(rel - np.median(rel)) <= max(k * mad, floor)
+    coef = np.linalg.lstsq(X[keep], y[keep], rcond=None)[0]
+    return coef.tolist(), keep
+
+
 @dataclass
 class PumpBaseline:
     """정상 구간에서 맞춘 물리 기대값.
@@ -154,24 +181,26 @@ class PumpBaseline:
     def fit(cls, cycles, setup, circ=None):
         """cycles: run() 의 사이클 표 중 **정상 사이클만**. circ: circulation_windows() 결과(선택)."""
         c = cycles.dropna(subset=["Hz", "FT", "PT", "mu_rel"])
+        c = c[(c.FT > 0) & (c.Hz > 0)]
         r = float(np.median(c.FT / c.Hz))
         if setup.material == "POL":
             h = c.Hz / 1000.0
             X = np.c_[np.ones(len(c)), h, h ** 2, c.mu_rel - 1.0]
         else:
             X = np.c_[np.ones(len(c)), (c.PT / c.Hz * 1000.0) / c.mu_rel]
-        pump_coef = np.linalg.lstsq(X, c.FT / c.Hz, rcond=None)[0].tolist()
-        fte = c.Hz * r
-        pt_coef = np.linalg.lstsq(np.c_[np.ones(len(c)), c.mu_rel * fte, fte ** 2], c.PT, rcond=None)[0].tolist()
+        pump_coef, keep = _robust_lstsq(X, (c.FT / c.Hz).to_numpy())
+        fte = (c.Hz * r).to_numpy()
+        Xp = np.c_[np.ones(len(c)), c.mu_rel * fte, fte ** 2]
+        pt_coef, _ = _robust_lstsq(Xp[keep], c.PT.to_numpy()[keep])
         circ_coef = None
         if circ is not None and len(circ) >= 10:
             cc = circ.dropna(subset=["FT_Hz", "PT", "mu_rel"])
-            xc = cc.mu_rel - 1.0 if setup.material == "POL" else (cc.PT / setup.p.CIRC_HZ * 1000.0) / cc.mu_rel
-            circ_coef = np.linalg.lstsq(np.c_[np.ones(len(cc)), xc], cc.FT_Hz, rcond=None)[0].tolist()
-        info = {"n_cycles": int(len(c)), "start": str(c.t_start.min()), "end": str(c.t_start.max()),
+            xc = cc.mu_rel - 1.0 if setup.material == "POL" else (cc.PT / setup.circ_hz * 1000.0) / cc.mu_rel
+            circ_coef, _ = _robust_lstsq(np.c_[np.ones(len(cc)), xc], cc.FT_Hz.to_numpy())
+        info = {"n_cycles": int(len(c)), "n_outliers": int((~keep).sum()), "start": str(c.t_start.min()), "end": str(c.t_start.max()),
                 "T_range": [float(c.T_C.quantile(0.01)), float(c.T_C.quantile(0.99))],
                 "settings_version": setup.settings_version, "material_name": setup.material_name}
-        return cls(setup.pump, setup.material, r, pump_coef, pt_coef, circ_coef, float(setup.p.CIRC_HZ), info)
+        return cls(setup.pump, setup.material, r, pump_coef, pt_coef, circ_coef, setup.circ_hz, info)
 
     def save(self, path):
         with open(path, "w", encoding="utf-8") as f:
@@ -241,7 +270,11 @@ def cycle_features(t, sv, hz, ft, pt, tt_raw, shot, decay_t, decay_ft, decay_pt,
     stable = np.zeros(n, bool)
     if len(idx) > p.STEADY_MIN:
         stable[idx[p.STEADY_MIN:]] = True
-    clean = stable & ~shot
+    clean, src = stable & ~shot, "clean"
+    if clean.sum() < p.MIN_CLEAN_TICKS:
+        # 사출이 안정 구간을 거의 덮는 헤드(HD2 다단 사출 등) — 사출 중 안정 틱으로 대신하고 출처를 남긴다.
+        # PT·K 는 노즐이 열린 상태라 clean 사이클과 섞어 비교하지 말 것 (steady_src 로 나눠 볼 것)
+        clean, src = stable.copy(), "shot"
     if clean.sum() < p.MIN_CLEAN_TICKS or hz_c <= 0 or sv_c <= 0:
         return None
     ft_s, pt_s = float(np.median(ft[clean])), float(np.median(pt[clean]))
@@ -260,12 +293,14 @@ def cycle_features(t, sv, hz, ft, pt, tt_raw, shot, decay_t, decay_ft, decay_pt,
         # C. 펌프계 (기준선 무관 부분)
         "FT": ft_s, "FT_Hz": ft_s / hz_c,
         "t_self": crossing_time(t, ft, p.TSELF_LEVEL * ft_s),
-        "ft_cv": float(np.std(ft[clean]) / ft_s * 100.0),
+        "ft_cv": float(np.std(ft[clean]) / ft_s * 100.0) if ft_s > 0 else np.nan,
         # D. 배관 (기준선 무관 부분)
-        "PT": pt_s, "K": pt_s / ft_s ** 2 * p.K_SCALE, "pt_std": float(np.std(pt[clean])),
+        "PT": pt_s, "K": pt_s / ft_s ** 2 * p.K_SCALE if ft_s > 0 else np.nan,   # FT 0 = 지령은 있는데 안 나옴
+        "pt_std": float(np.std(pt[clean])),
         # E. 기록
         "Hz_SV": hz_c / sv_c, "n_ticks": int(n), "duration_sec": float(t[-1]),
-        "n_shot_ticks": int((stable & shot).sum()), "n_clean_ticks": int(clean.sum()),
+        "n_shot_ticks": int((stable & shot).sum()), "n_clean_ticks": int(clean.sum()), "steady_src": src,
+        "n_hz_levels": int(len(np.unique(hz))),   # 사이클 안 Hz 단계 수 (HD2 는 다단: 3)
         "decel_half_sec": np.nan, "release_half_sec": np.nan,
     }
     if decay_t is not None and len(decay_t) >= p.DECAY_MIN_TICKS and decay_t[-1] >= p.DECAY_FT_FLOOR_FROM:
@@ -505,9 +540,10 @@ class PumpProcessor:
 # --------------------------------------------------------------------------- #
 # 배치 = 과거 데이터를 같은 상태기계에 흘린 것
 # --------------------------------------------------------------------------- #
-def run(raw, setup, base=None, keep_idle=False):
+def run(raw, setup, base=None, keep_idle=False, collect_ticks=True):
     """raw: LogExtractor.get_data 결과 (인덱스 = 시각, 펌프 한 대 분량).
-    반환: (ticks, cycles, alerts) DataFrame 3개. keep_idle=False 면 idle 틱은 뺀다."""
+    반환: (ticks, cycles, alerts) DataFrame 3개. keep_idle=False 면 idle 틱은 뺀다.
+    collect_ticks=False 면 틱 표를 모으지 않는다 (여러 날 사이클 피처만 만들 때 — 메모리 절약)."""
     need = [setup.tags[k] for k in ("bu", "sv", "hz", "ft", "pt", "tt")]
     missing = [t for t in need if t not in raw.columns]
     if missing:
@@ -518,7 +554,7 @@ def run(raw, setup, base=None, keep_idle=False):
     raw = raw.sort_index()
     for ts, vals in zip(raw.index, raw.to_numpy()):
         o = proc.update(ts, dict(zip(cols, vals)))
-        if o["tick"] is not None and (keep_idle or o["tick"]["phase"] != "idle"):
+        if collect_ticks and o["tick"] is not None and (keep_idle or o["tick"]["phase"] != "idle"):
             ticks.append(o["tick"])
         if o["cycle"] is not None:
             cycles.append(o["cycle"])
@@ -534,7 +570,7 @@ def run(raw, setup, base=None, keep_idle=False):
 # 순환운전 창 — 사이클과 무관한 별도 집계 (생산 전 표준 시험)
 # --------------------------------------------------------------------------- #
 def circulation_windows(raw, setup, base=None, freq="5min", min_ticks=30):
-    """사이클 사이 20 Hz 순환운전을 창마다 요약 — 순환 펌프 잔차, 순환 K.
+    """사이클 사이 순환운전(펌프별 고정 Hz, setup.circ_hz)을 창마다 요약 — 순환 펌프 잔차, 순환 K.
     직전 창과 30분 넘게 떨어진 첫 창 = 재가동 직후 (`morning=True`) = 생산 전 표준 시험."""
     p, tg = setup.p, setup.tags
     q = raw.sort_index().ffill()
@@ -546,7 +582,7 @@ def circulation_windows(raw, setup, base=None, freq="5min", min_ticks=30):
     for a in setup.alarm_tags:
         if a in q.columns:
             alarm |= (q[a].fillna(0) != 0).to_numpy()
-    m = (bu == 0) & (hz == p.CIRC_HZ) & (ft > p.CIRC_MIN_FT) & ~alarm
+    m = (bu == 0) & (hz == setup.circ_hz) & (ft > p.CIRC_MIN_FT) & ~alarm
     d = pd.DataFrame({"time": q.index.to_numpy()[m], "ft": ft[m], "pt": pt[m], "tt": q[tg["tt"]].to_numpy(float)[m]})
     if d.empty:
         return d
@@ -555,7 +591,7 @@ def circulation_windows(raw, setup, base=None, freq="5min", min_ticks=30):
     g = g[g.n >= min_ticks].copy()
     g["T_C"] = g.tt_raw / p.TEMP_SCALE
     g["mu_rel"] = setup.visc(g.tt_raw)
-    g["FT_Hz"] = g.FT / p.CIRC_HZ
+    g["FT_Hz"] = g.FT / setup.circ_hz
     g["K_circ"] = g.PT / g.FT ** 2 * p.K_SCALE
     gaps = g.index.to_series().diff() > pd.Timedelta(minutes=30)
     g["morning"] = gaps | (g.index == g.index.min())

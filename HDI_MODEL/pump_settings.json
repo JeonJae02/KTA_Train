@@ -1,6 +1,7 @@
 {
  "version": "2026-10-07",
  "generated_by": "make_pump_settings.py",
+ "topology_version": "2026-08-14T00:00:00.000Z",
  "params": {
   "T_REF": 22.0,
   "TEMP_SCALE": 10.0,
@@ -33,127 +34,194 @@
   "TM-337": {
    "type": "POL",
    "B": 5756.0,
-   "desc": "폴리올 BACK"
+   "desc": "폴리올 BACK",
+   "basis": "원료표"
   },
   "AM-315": {
    "type": "POL",
    "B": 5418.0,
-   "desc": "폴리올 CUSH"
+   "desc": "폴리올 CUSH",
+   "basis": "원료표"
   },
   "MBR-360": {
    "type": "POL",
    "B": 5360.0,
-   "desc": "폴리올 고탄성"
+   "desc": "폴리올 고탄성",
+   "basis": "원료표"
   },
   "TM-20": {
    "type": "ISO",
    "B": 1921.0,
-   "desc": "ISO"
+   "desc": "ISO",
+   "basis": "원료표 (I1 데이터 추정 −2.36 %/℃ 와 일치)"
   },
   "MC-70": {
    "type": "ISO",
    "B": 2781.0,
-   "desc": "ISO"
+   "desc": "ISO",
+   "basis": "원료표"
+  },
+  "POL-GENERIC": {
+   "type": "POL",
+   "B": 5511.0,
+   "desc": "폴리올 (SOFT/HARD 등 원료표 없음)",
+   "basis": "임시 — 폴리올 3종 평균"
+  },
+  "ISO-GENERIC": {
+   "type": "ISO",
+   "B": 2351.0,
+   "desc": "ISO/MDI (원료 등급 미확인)",
+   "basis": "임시 — ISO 2종 평균"
   }
  },
  "pumps": {
-  "P1": {
-   "material": "TM-337",
-   "tank": "P1",
-   "head": "HD1",
-   "slot": 1,
-   "verified": true
-  },
   "I1": {
+   "name": "1펌프 ISO",
    "material": "TM-20",
+   "material_basis": "검증",
    "tank": "I1",
    "head": "HD1",
    "slot": 1,
-   "verified": true
+   "verified": true,
+   "circ_hz": 2000
+  },
+  "I2": {
+   "name": "1-2펌프 ISO",
+   "material": "ISO-GENERIC",
+   "material_basis": "임시 (Tank 3 ISO)",
+   "tank": "I3",
+   "head": "HD1",
+   "slot": 2,
+   "verified": false,
+   "circ_hz": 2500
+  },
+  "I3": {
+   "name": "2-1펌프 MDI",
+   "material": "ISO-GENERIC",
+   "material_basis": "임시 (Tank 2-2 MDI)",
+   "tank": "I2",
+   "head": "HD2",
+   "slot": 1,
+   "verified": false,
+   "circ_hz": 2500
+  },
+  "I4": {
+   "name": "2-2펌프 MDI",
+   "material": "ISO-GENERIC",
+   "material_basis": "임시 (Tank 2-2 MDI)",
+   "tank": "I2",
+   "head": "HD2",
+   "slot": 2,
+   "verified": false,
+   "circ_hz": 2500
+  },
+  "I5": {
+   "name": "3펌프 ISO",
+   "material": "ISO-GENERIC",
+   "material_basis": "임시 (Tank 3 ISO)",
+   "tank": "I3",
+   "head": "HD3",
+   "slot": 1,
+   "verified": false,
+   "circ_hz": 2500
+  },
+  "I6": {
+   "name": "3-2펌프 ISO",
+   "material": "TM-20",
+   "material_basis": "같은탱크(I1)",
+   "tank": "I1",
+   "head": "HD3",
+   "slot": 2,
+   "verified": false,
+   "circ_hz": 2500,
+   "params": {
+    "STEADY_MIN": 4,
+    "MIN_CYCLE_TICKS": 7
+   }
+  },
+  "I7": {
+   "name": "4펌프 ISO",
+   "material": "ISO-GENERIC",
+   "material_basis": "임시 (Tank 3 ISO)",
+   "tank": "I3",
+   "head": "HD4",
+   "slot": 1,
+   "verified": false,
+   "circ_hz": 3000
+  },
+  "P1": {
+   "name": "1펌프 BACK",
+   "material": "TM-337",
+   "material_basis": "검증",
+   "tank": "P1",
+   "head": "HD1",
+   "slot": 1,
+   "verified": true,
+   "circ_hz": 2000
   },
   "P2": {
-   "material": null,
+   "name": "1-2펌프 CUSH",
+   "material": "AM-315",
+   "material_basis": "이름 CUSH",
    "tank": "P5",
    "head": "HD1",
    "slot": 2,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500
   },
   "P3": {
-   "material": null,
+   "name": "2-1펌프 SOFT",
+   "material": "POL-GENERIC",
+   "material_basis": "임시 (SOFT)",
    "tank": "P2",
    "head": "HD2",
    "slot": 1,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500
   },
   "P4": {
-   "material": null,
+   "name": "2-2펌프 HARD",
+   "material": "POL-GENERIC",
+   "material_basis": "임시 (HARD)",
    "tank": "P4",
    "head": "HD2",
    "slot": 2,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500
   },
   "P5": {
-   "material": null,
+   "name": "3펌프 고탄성",
+   "material": "MBR-360",
+   "material_basis": "이름 고탄성",
    "tank": "P3",
    "head": "HD3",
    "slot": 1,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500
   },
   "P6": {
-   "material": null,
+   "name": "3-2펌프 BACK",
+   "material": "TM-337",
+   "material_basis": "같은탱크(P1)·이름 BACK",
    "tank": "P1",
    "head": "HD3",
    "slot": 2,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500,
+   "params": {
+    "STEADY_MIN": 4,
+    "MIN_CYCLE_TICKS": 7
+   }
   },
   "P7": {
-   "material": null,
+   "name": "4펌프 CUSH",
+   "material": "AM-315",
+   "material_basis": "이름 CUSH",
    "tank": "P5",
    "head": "HD4",
    "slot": 1,
-   "verified": false
-  },
-  "I2": {
-   "material": null,
-   "tank": "I3",
-   "head": "HD1",
-   "slot": 2,
-   "verified": false
-  },
-  "I3": {
-   "material": null,
-   "tank": "I2",
-   "head": "HD2",
-   "slot": 1,
-   "verified": false
-  },
-  "I4": {
-   "material": null,
-   "tank": "I2",
-   "head": "HD2",
-   "slot": 2,
-   "verified": false
-  },
-  "I5": {
-   "material": null,
-   "tank": "I3",
-   "head": "HD3",
-   "slot": 1,
-   "verified": false
-  },
-  "I6": {
-   "material": null,
-   "tank": "I1",
-   "head": "HD3",
-   "slot": 2,
-   "verified": false
-  },
-  "I7": {
-   "material": null,
-   "tank": "I3",
-   "head": "HD4",
-   "slot": 1,
-   "verified": false
+   "verified": false,
+   "circ_hz": 2500
   }
  },
  "alarm_tags": [
