@@ -1,17 +1,17 @@
 {
  "pump": "P7",
  "material": "POL",
- "r": 0.7240451166367599,
+ "r": 0.7209770838579703,
  "pump_coef": [
-  0.7147973683099648,
-  0.0076486155317792084,
-  -0.0013414513341190317,
-  0.000275071273895087
+  1.446897742356273,
+  -0.3507539178893673,
+  0.04229776975513489,
+  0.0002306030396503566
  ],
  "pt_coef": [
-  61.049850328936095,
-  -2.3391293717245133e-05,
-  9.29764022453888e-06
+  27.03183149908798,
+  -0.00022486924260363224,
+  1.4047860644352876e-05
  ],
  "circ_coef": [
   0.7304138919487719,
@@ -19,22 +19,22 @@
  ],
  "circ_hz": 2500.0,
  "fitted_on": {
-  "n_cycles": 12069,
-  "n_outliers": 147,
-  "n_pt_cycles": 11097,
-  "n_pt_outliers": 0,
-  "start": "2026-09-10 06:54:53.412679",
-  "end": "2026-10-03 23:54:42.046383",
+  "n_cycles": 32739,
+  "n_outliers": 1225,
+  "n_pt_cycles": 32131,
+  "n_pt_outliers": 22,
+  "start": "2026-09-10 06:51:14.259179",
+  "end": "2026-10-03 23:56:04.574709",
   "T_range": [
    17.5,
    23.7
   ],
   "settings_version": "2026-10-07",
   "material_name": "AM-315",
-  "created": "2026-10-08T14:26:44",
+  "created": "2026-10-08T15:43:10",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "shot",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -51,9 +51,9 @@
    ]
   ],
   "pump_fit": {
-   "start": "2026-09-10 06:54:53.412679",
-   "end": "2026-10-03 23:54:42.046383",
-   "n": 12069
+   "start": "2026-09-10 06:51:14.259179",
+   "end": "2026-10-03 23:56:04.574709",
+   "n": 32739
   },
   "pt_fit": {
    "rule": "auto",
@@ -61,12 +61,13 @@
     "2026-09-10",
     "2026-10-03"
    ],
-   "level_pct": -0.5,
+   "level_pct": 0.0,
    "healthy_days": [
     "2026-09-10",
     "2026-09-11",
     "2026-09-12",
     "2026-09-14",
+    "2026-09-15",
     "2026-09-16",
     "2026-09-17",
     "2026-09-18",
@@ -81,11 +82,9 @@
     "2026-10-02",
     "2026-10-03"
    ],
-   "excluded_days": [
-    "2026-09-15"
-   ],
-   "n_hours_dropped": 10,
-   "n": 11097,
+   "excluded_days": [],
+   "n_hours_dropped": 11,
+   "n": 32131,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -99,27 +98,27 @@
   "review": null,
   "eval": {
    "train": {
-    "n": 8431,
-    "pump_resid_med": -0.147,
-    "pump_resid_spread": 0.306,
-    "r_phys_med": 1.0012,
-    "r_phys_spread": 0.032,
+    "n": 21521,
+    "pump_resid_med": -0.012,
+    "pump_resid_spread": 0.238,
+    "r_phys_med": 1.0,
+    "r_phys_spread": 0.0217,
     "circ_resid_med": -0.004
    },
    "val": {
-    "n": 3638,
-    "pump_resid_med": 0.065,
-    "pump_resid_spread": 0.37,
-    "r_phys_med": 0.994,
-    "r_phys_spread": 0.0336,
+    "n": 11218,
+    "pump_resid_med": -0.011,
+    "pump_resid_spread": 0.153,
+    "r_phys_med": 1.0038,
+    "r_phys_spread": 0.0212,
     "circ_resid_med": 0.009
    },
    "test": {
-    "n": 1687,
-    "pump_resid_med": 0.056,
-    "pump_resid_spread": 0.346,
-    "r_phys_med": 0.9963,
-    "r_phys_spread": 0.0358,
+    "n": 5115,
+    "pump_resid_med": -0.011,
+    "pump_resid_spread": 0.144,
+    "r_phys_med": 1.003,
+    "r_phys_spread": 0.0226,
     "circ_resid_med": 0.008
    }
   }

@@ -1,15 +1,15 @@
 {
  "pump": "I2",
  "material": "ISO",
- "r": 0.3085199824330259,
+ "r": 0.31127386868951085,
  "pump_coef": [
-  0.41128868743772135,
-  -0.00561319055598664
+  0.40883727224658667,
+  -0.005480028642391327
  ],
  "pt_coef": [
-  7.527867458889944,
-  0.01945983529054209,
-  2.735471626947909e-05
+  7.7520891474638915,
+  0.01806410395449584,
+  2.7580384671358308e-05
  ],
  "circ_coef": [
   0.40349578405838576,
@@ -17,11 +17,11 @@
  ],
  "circ_hz": 2500.0,
  "fitted_on": {
-  "n_cycles": 29898,
-  "n_outliers": 131,
-  "n_pt_cycles": 22518,
-  "n_pt_outliers": 114,
-  "start": "2026-09-10 06:51:47.397979",
+  "n_cycles": 41059,
+  "n_outliers": 147,
+  "n_pt_cycles": 26736,
+  "n_pt_outliers": 141,
+  "start": "2026-09-10 06:51:08.511250",
   "end": "2026-10-03 23:56:11.401616",
   "T_range": [
    19.6,
@@ -29,10 +29,10 @@
   ],
   "settings_version": "2026-10-07",
   "material_name": "ISO-GENERIC",
-  "created": "2026-10-08T14:26:43",
+  "created": "2026-10-08T15:43:09",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "clean",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -42,9 +42,9 @@
   ],
   "events": [],
   "pump_fit": {
-   "start": "2026-09-10 06:51:47.397979",
+   "start": "2026-09-10 06:51:08.511250",
    "end": "2026-10-03 23:56:11.401616",
-   "n": 29898
+   "n": 41059
   },
   "pt_fit": {
    "rule": "auto",
@@ -52,11 +52,10 @@
     "2026-09-15",
     "2026-09-23"
    ],
-   "level_pct": -0.26,
+   "level_pct": -0.3,
    "healthy_days": [
     "2026-09-10",
     "2026-09-11",
-    "2026-09-12",
     "2026-09-15",
     "2026-09-16",
     "2026-09-17",
@@ -66,17 +65,18 @@
     "2026-09-22",
     "2026-09-23",
     "2026-09-29",
-    "2026-10-01",
-    "2026-10-02"
+    "2026-10-01"
    ],
    "excluded_days": [
+    "2026-09-12",
     "2026-09-14",
     "2026-09-28",
     "2026-09-30",
+    "2026-10-02",
     "2026-10-03"
    ],
-   "n_hours_dropped": 21,
-   "n": 22518,
+   "n_hours_dropped": 12,
+   "n": 26736,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -90,27 +90,27 @@
   "review": null,
   "eval": {
    "train": {
-    "n": 21387,
-    "pump_resid_med": -0.136,
-    "pump_resid_spread": 1.035,
-    "r_phys_med": 0.9981,
-    "r_phys_spread": 0.0167,
+    "n": 28743,
+    "pump_resid_med": -0.146,
+    "pump_resid_spread": 1.008,
+    "r_phys_med": 0.9993,
+    "r_phys_spread": 0.0165,
     "circ_resid_med": -0.225
    },
    "val": {
-    "n": 8511,
-    "pump_resid_med": 0.327,
-    "pump_resid_spread": 0.914,
-    "r_phys_med": 0.9839,
-    "r_phys_spread": 0.045,
+    "n": 12316,
+    "pump_resid_med": 0.361,
+    "pump_resid_spread": 0.912,
+    "r_phys_med": 0.9827,
+    "r_phys_spread": 0.0463,
     "circ_resid_med": 0.132
    },
    "test": {
-    "n": 3529,
-    "pump_resid_med": 0.491,
-    "pump_resid_spread": 1.196,
-    "r_phys_med": 1.0186,
-    "r_phys_spread": 0.0364,
+    "n": 5403,
+    "pump_resid_med": 0.627,
+    "pump_resid_spread": 1.124,
+    "r_phys_med": 1.0231,
+    "r_phys_spread": 0.037,
     "circ_resid_med": 0.674
    }
   }

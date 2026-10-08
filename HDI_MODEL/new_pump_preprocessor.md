@@ -51,7 +51,7 @@ from new_pump_preprocessor import PumpSetup, PumpBaseline, add_baseline_features
 
 setup = PumpSetup("P2", allow_unverified=True)       # 원료 미검증 펌프는 allow_unverified 필요
 cyc = load_feat("P2")                                # 사이클 표 (기준선 무관 피처)
-cyc = cyc[(cyc.steady_src == "clean") & (cyc.n_hz_levels == 1)]
+cyc = cyc[cyc.steady_src == "clean"]                 # 다단 Hz 사이클도 넣는다 (대표 Hz 구간 안정값)
 ref = cyc[~cyc.flag_any & cyc.t_start.between("2026-09-15", "2026-09-24")]   # P2 는 9/10~14 배관 저항이 높았다 (5절)
 base = PumpBaseline.fit(ref, setup,
                         circ=load_feat("P2", "circ"))
@@ -107,7 +107,7 @@ while True:
 | `P0` | 켜지기 직전 틱 PT | 순환 중 압력 = 배관 상태 + 온도 | 실·사 |
 | `Gap_sec` | 이번 시작 − 직전 사이클 마지막 켜짐 틱 | 운전 리듬 | 기록 |
 | `steady_src` | `clean`: 사출 전 안정 틱 / `shot`: 사출 중 안정 틱 (clean 이 3틱 미만일 때) | **안정값의 출처. PT·K 수준이 달라 섞지 말 것** | 필터 |
-| `n_hz_levels` | 사이클 안 서로 다른 Hz 개수 | 다단 사출 레시피 (P2·I2 36%, P7·I7 52%, P3·I3 30%) | 필터 |
+| `n_hz_levels` | 사이클 안 서로 다른 Hz 개수 | 다단 사출 레시피 (P2·I2 36%, P7·I7 52%, P3·I3 30%). 기준선에는 넣고(빼면 다단 레시피 Hz 대역을 외삽), 모델은 단일/다단을 따로 표준화 | 묶음 |
 
 ### B. 품질 — SV 기준
 

@@ -1,15 +1,15 @@
 {
  "pump": "I3",
  "material": "ISO",
- "r": 0.4301014656144307,
+ "r": 0.4298507462686567,
  "pump_coef": [
-  0.4365616491405015,
-  -0.00048034756632418096
+  0.43851528054616074,
+  -0.0006295350905359361
  ],
  "pt_coef": [
-  6.895496636414582,
-  0.0028668947670169856,
-  1.5526855028174466e-05
+  30.761802105593418,
+  -0.04655199121094093,
+  3.837757467197087e-05
  ],
  "circ_coef": [
   0.4454806250555923,
@@ -17,22 +17,22 @@
  ],
  "circ_hz": 2500.0,
  "fitted_on": {
-  "n_cycles": 4738,
+  "n_cycles": 6960,
   "n_outliers": 0,
-  "n_pt_cycles": 3278,
-  "n_pt_outliers": 42,
-  "start": "2026-09-10 07:11:14.531469",
+  "n_pt_cycles": 4487,
+  "n_pt_outliers": 0,
+  "start": "2026-09-10 06:55:55.075850",
   "end": "2026-10-03 23:54:36.331356",
   "T_range": [
    21.8,
-   23.331500000000005
+   23.4
   ],
   "settings_version": "2026-10-07",
   "material_name": "ISO-GENERIC",
-  "created": "2026-10-08T14:26:43",
+  "created": "2026-10-08T15:43:09",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "shot",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -42,9 +42,9 @@
   ],
   "events": [],
   "pump_fit": {
-   "start": "2026-09-10 07:11:14.531469",
+   "start": "2026-09-10 06:55:55.075850",
    "end": "2026-10-03 23:54:36.331356",
-   "n": 4738
+   "n": 6960
   },
   "pt_fit": {
    "rule": "auto",
@@ -75,8 +75,8 @@
     "2026-09-16",
     "2026-09-17"
    ],
-   "n_hours_dropped": 7,
-   "n": 3278,
+   "n_hours_dropped": 13,
+   "n": 4487,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -87,30 +87,30 @@
    "n_windows": 3872
   },
   "material_verified": false,
-  "review": "9/18 이후 K −6% 상태가 평소로 잡힌다 — 그 전 상태가 맞으면 PT_OVERRIDE 로",
+  "review": "자동(9/18 이후) 유지 — 9/18 12~13시 한 시간 만에 K +4% → −1% 계단, 전후 모두 평평. 조정·청소 작업 뒤로 판단",
   "eval": {
    "train": {
-    "n": 2978,
-    "pump_resid_med": -0.0,
+    "n": 4463,
+    "pump_resid_med": 0.014,
     "pump_resid_spread": 0.115,
-    "r_phys_med": 1.0415,
-    "r_phys_spread": 0.0484,
+    "r_phys_med": 1.0338,
+    "r_phys_spread": 0.0817,
     "circ_resid_med": -0.046
    },
    "val": {
-    "n": 1760,
-    "pump_resid_med": 0.001,
-    "pump_resid_spread": 0.143,
-    "r_phys_med": 0.9928,
-    "r_phys_spread": 0.017,
+    "n": 2497,
+    "pump_resid_med": 0.002,
+    "pump_resid_spread": 0.133,
+    "r_phys_med": 0.9973,
+    "r_phys_spread": 0.0472,
     "circ_resid_med": 0.037
    },
    "test": {
-    "n": 720,
-    "pump_resid_med": -0.019,
+    "n": 931,
+    "pump_resid_med": -0.016,
     "pump_resid_spread": 0.102,
-    "r_phys_med": 0.998,
-    "r_phys_spread": 0.0154,
+    "r_phys_med": 0.9804,
+    "r_phys_spread": 0.0433,
     "circ_resid_med": -0.105
    }
   }

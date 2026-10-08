@@ -1,15 +1,15 @@
 {
  "pump": "I7",
  "material": "ISO",
- "r": 0.2532603025560772,
+ "r": 0.25204613095238093,
  "pump_coef": [
-  0.2683517846965296,
-  -0.0010873074295688096
+  0.2769669798546677,
+  -0.0017416581836906689
  ],
  "pt_coef": [
-  4.239901422997273,
-  0.0008220937878185277,
-  4.211724557898771e-05
+  2.0484683394768926,
+  0.00477275356075796,
+  4.080754305308566e-05
  ],
  "circ_coef": [
   0.27618854165955786,
@@ -17,22 +17,22 @@
  ],
  "circ_hz": 3000.0,
  "fitted_on": {
-  "n_cycles": 12198,
-  "n_outliers": 184,
-  "n_pt_cycles": 5142,
-  "n_pt_outliers": 61,
-  "start": "2026-09-10 06:54:53.412679",
-  "end": "2026-10-03 23:54:42.046383",
+  "n_cycles": 33253,
+  "n_outliers": 1157,
+  "n_pt_cycles": 12859,
+  "n_pt_outliers": 93,
+  "start": "2026-09-10 06:51:14.259179",
+  "end": "2026-10-03 23:56:04.574709",
   "T_range": [
    19.6,
    21.9
   ],
   "settings_version": "2026-10-07",
   "material_name": "ISO-GENERIC",
-  "created": "2026-10-08T14:26:44",
+  "created": "2026-10-08T15:43:10",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "shot",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -42,19 +42,15 @@
   ],
   "events": [],
   "pump_fit": {
-   "start": "2026-09-10 06:54:53.412679",
-   "end": "2026-10-03 23:54:42.046383",
-   "n": 12198
+   "start": "2026-09-10 06:51:14.259179",
+   "end": "2026-10-03 23:56:04.574709",
+   "n": 33253
   },
   "pt_fit": {
-   "rule": "auto",
-   "run": [
-    "2026-09-23",
-    "2026-10-03"
-   ],
-   "level_pct": 5.04,
+   "rule": "manual",
+   "run": null,
+   "level_pct": 1.56,
    "healthy_days": [
-    "2026-09-21",
     "2026-09-23",
     "2026-09-28",
     "2026-09-29",
@@ -73,10 +69,11 @@
     "2026-09-17",
     "2026-09-18",
     "2026-09-19",
+    "2026-09-21",
     "2026-09-22"
    ],
-   "n_hours_dropped": 3,
-   "n": 5142,
+   "n_hours_dropped": 2,
+   "n": 12859,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -87,30 +84,30 @@
    "n_windows": 3864
   },
   "material_verified": false,
-  "review": "9/21 이후 K +14% 상태가 더 길어 그쪽이 평소로 잡힌다 — 그 전(저항 낮음)이 건강이면 PT_OVERRIDE 로",
+  "review": "수동 지정 — 9/23 이후 안정 상태. 그 전 톱니(드리프트) 구간은 이상으로 잡힌다",
   "eval": {
    "train": {
-    "n": 8586,
-    "pump_resid_med": -0.018,
-    "pump_resid_spread": 0.396,
-    "r_phys_med": 0.9103,
-    "r_phys_spread": 0.0807,
+    "n": 22014,
+    "pump_resid_med": -0.016,
+    "pump_resid_spread": 0.577,
+    "r_phys_med": 0.9086,
+    "r_phys_spread": 0.0775,
     "circ_resid_med": -0.009
    },
    "val": {
-    "n": 3612,
-    "pump_resid_med": -0.063,
-    "pump_resid_spread": 0.344,
+    "n": 11239,
+    "pump_resid_med": 0.216,
+    "pump_resid_spread": 0.465,
     "r_phys_med": 1.0008,
-    "r_phys_spread": 0.01,
+    "r_phys_spread": 0.0091,
     "circ_resid_med": -0.144
    },
    "test": {
-    "n": 1658,
-    "pump_resid_med": -0.172,
-    "pump_resid_spread": 0.436,
-    "r_phys_med": 0.9875,
-    "r_phys_spread": 0.1061,
+    "n": 5105,
+    "pump_resid_med": 0.077,
+    "pump_resid_spread": 0.501,
+    "r_phys_med": 0.9877,
+    "r_phys_spread": 0.0952,
     "circ_resid_med": -0.083
    }
   }

@@ -3,13 +3,13 @@
  "material": "ISO",
  "r": 0.3930579320459545,
  "pump_coef": [
-  0.40882978412477444,
-  -0.0006543874042748536
+  0.4087012812172291,
+  -0.00064913365046453
  ],
  "pt_coef": [
-  4.971552979103011,
-  0.001360772402878372,
-  3.341521340975554e-05
+  5.033061269411508,
+  0.001297411597530347,
+  3.343100846502384e-05
  ],
  "circ_coef": [
   0.39768306057011493,
@@ -17,10 +17,10 @@
  ],
  "circ_hz": 2500.0,
  "fitted_on": {
-  "n_cycles": 4710,
+  "n_cycles": 4789,
   "n_outliers": 0,
-  "n_pt_cycles": 4710,
-  "n_pt_outliers": 1,
+  "n_pt_cycles": 4789,
+  "n_pt_outliers": 2,
   "start": "2026-09-10 07:11:14.531469",
   "end": "2026-10-03 23:54:36.331356",
   "T_range": [
@@ -29,10 +29,10 @@
   ],
   "settings_version": "2026-10-07",
   "material_name": "ISO-GENERIC",
-  "created": "2026-10-08T14:26:44",
+  "created": "2026-10-08T15:43:10",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "clean",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -44,7 +44,7 @@
   "pump_fit": {
    "start": "2026-09-10 07:11:14.531469",
    "end": "2026-10-03 23:54:36.331356",
-   "n": 4710
+   "n": 4789
   },
   "pt_fit": {
    "rule": "auto",
@@ -75,7 +75,7 @@
    ],
    "excluded_days": [],
    "n_hours_dropped": 0,
-   "n": 4710,
+   "n": 4789,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -89,15 +89,15 @@
   "review": null,
   "eval": {
    "train": {
-    "n": 2959,
-    "pump_resid_med": 0.057,
-    "pump_resid_spread": 0.121,
+    "n": 3023,
+    "pump_resid_med": 0.056,
+    "pump_resid_spread": 0.122,
     "r_phys_med": 1.0012,
-    "r_phys_spread": 0.0064,
+    "r_phys_spread": 0.0065,
     "circ_resid_med": 0.008
    },
    "val": {
-    "n": 1751,
+    "n": 1766,
     "pump_resid_med": -0.068,
     "pump_resid_spread": 0.142,
     "r_phys_med": 1.001,
@@ -105,11 +105,11 @@
     "circ_resid_med": 0.011
    },
    "test": {
-    "n": 739,
-    "pump_resid_med": -0.083,
-    "pump_resid_spread": 0.118,
-    "r_phys_med": 1.0009,
-    "r_phys_spread": 0.007,
+    "n": 825,
+    "pump_resid_med": -0.076,
+    "pump_resid_spread": 0.125,
+    "r_phys_med": 1.0006,
+    "r_phys_spread": 0.0071,
     "circ_resid_med": 0.009
    }
   }

@@ -3,15 +3,15 @@
  "material": "POL",
  "r": 0.5596371882086167,
  "pump_coef": [
-  0.5583194486620408,
-  0.005388944760263554,
-  -0.0011384695178324404,
-  -0.0002950898497634437
+  0.5585471498916709,
+  0.0052803388721042125,
+  -0.0011255607976158324,
+  -0.0002926406845594808
  ],
  "pt_coef": [
-  47.15763370912997,
-  0.0006768676934560846,
-  1.0355850899330432e-05
+  47.13324491468185,
+  0.0006850643521191462,
+  1.0356649247678918e-05
  ],
  "circ_coef": [
   0.5663997724044811,
@@ -19,9 +19,9 @@
  ],
  "circ_hz": 2500.0,
  "fitted_on": {
-  "n_cycles": 8284,
+  "n_cycles": 8388,
   "n_outliers": 22,
-  "n_pt_cycles": 8154,
+  "n_pt_cycles": 8257,
   "n_pt_outliers": 0,
   "start": "2026-09-10 06:52:06.813149",
   "end": "2026-10-03 23:55:23.723171",
@@ -31,10 +31,10 @@
   ],
   "settings_version": "2026-10-07",
   "material_name": "TM-337",
-  "created": "2026-10-08T14:26:44",
+  "created": "2026-10-08T15:43:10",
   "generated_by": "baseline/make_baselines.py",
   "steady_src": "shot",
-  "single_hz_only": true,
+  "hz_levels": "all",
   "split": {
    "val_start": "2026-09-28",
    "test_start": "2026-10-05"
@@ -46,7 +46,7 @@
   "pump_fit": {
    "start": "2026-09-10 06:52:06.813149",
    "end": "2026-10-03 23:55:23.723171",
-   "n": 8284
+   "n": 8388
   },
   "pt_fit": {
    "rule": "auto",
@@ -77,7 +77,7 @@
    ],
    "excluded_days": [],
    "n_hours_dropped": 6,
-   "n": 8154,
+   "n": 8257,
    "params": {
     "RUN_RANGE": 4.0,
     "DAY_BAND": 3.0,
@@ -91,27 +91,27 @@
   "review": null,
   "eval": {
    "train": {
-    "n": 4959,
+    "n": 5033,
     "pump_resid_med": 0.019,
-    "pump_resid_spread": 0.338,
+    "pump_resid_spread": 0.339,
     "r_phys_med": 1.0012,
     "r_phys_spread": 0.0203,
     "circ_resid_med": 0.071
    },
    "val": {
-    "n": 3325,
+    "n": 3355,
     "pump_resid_med": 0.028,
-    "pump_resid_spread": 0.35,
+    "pump_resid_spread": 0.352,
     "r_phys_med": 1.0001,
-    "r_phys_spread": 0.018,
+    "r_phys_spread": 0.0178,
     "circ_resid_med": 0.071
    },
    "test": {
-    "n": 1165,
+    "n": 1167,
     "pump_resid_med": 0.141,
     "pump_resid_spread": 0.017,
-    "r_phys_med": 0.9952,
-    "r_phys_spread": 0.0184,
+    "r_phys_med": 0.9953,
+    "r_phys_spread": 0.0186,
     "circ_resid_med": 0.071
    }
   }

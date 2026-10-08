@@ -13,7 +13,12 @@
 | ③ 순환 (FT/Hz)  | 테스트 구간 전 순환창 |
 
 공통 제외: 테스트 구간(TEST_START 이후), EXCLUDE_DAYS, EVENTS(알려진 이상), 알람·정지 사이클(flag_any),
-다단 Hz 사이클(n_hz_levels>1), 펌프의 주된 안정 출처(steady_src)가 아닌 사이클.
+펌프의 주된 안정 출처(steady_src)가 아닌 사이클.
+
+**다단 Hz 사이클(사이클 안에서 Hz 가 바뀌는 레시피)도 넣는다.** 안정값은 대표 Hz 구간에서 그 Hz 로 바뀐 뒤 5틱 이후라
+물리적으로 유효하고, 빼면 다단 레시피만 쓰는 Hz 대역(P3 본사출 5973 Hz — 단일 사이클은 3803~4372)을 기준선이 외삽한다.
+넣은 뒤 다단 사이클 잔차: P3 +3.9% → 0.0%, r_phys 0.64 → 0.99 / P2 −2.3% → −0.1%. 단일 사이클 쪽은 거의 그대로
+(P7·I7 퍼짐만 0.24 → 0.46%).
 
 ## 평소(건강) 배관 상태를 고르는 규칙 — `select_healthy`
 
@@ -63,12 +68,17 @@ HOUR_BAND = 5.0              # 건강 시간: 기준 수준 ± (%)
 MIN_PT_CYCLES = 500          # 압력 기준선 최소 사이클 수 — 모자라면 경고
 
 #: 자동 선택 대신 쓸 압력 기준선 건강일. {펌프: ["YYYY-MM-DD", ...]}
-PT_OVERRIDE = {}
-#: 자동 선택 결과 중 사람이 확인할 것 (출력에 표시만)
+PT_OVERRIDE = {
+    # 9/23 전에는 K 가 톱니 모양 — 1~2일에 걸쳐 15~20% 서서히 빠졌다가 한 번에 되돌아오기를 반복(온도 20.3~20.6℃ 일정,
+    # 유량 일정, 압력만 93→75). 조절 밸브·노즐 설정이 풀리고 다시 맞춘 것으로 추정. 9/23 06시부터 +1~3% 로 평평.
+    # 자동 선택은 기준 수준은 맞게 잡았지만 톱니가 우연히 같은 높이를 지난 날(9/11·16·17·21)도 섞여 있어 직접 지정 (2026-10-08)
+    "I7": ["2026-09-23", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03"],
+}
+#: 자동 선택 결과에 대한 메모 (출력·JSON 에 남김)
 REVIEW = {
-    "I7": "9/21 이후 K +14% 상태가 더 길어 그쪽이 평소로 잡힌다 — 그 전(저항 낮음)이 건강이면 PT_OVERRIDE 로",
-    "I3": "9/18 이후 K −6% 상태가 평소로 잡힌다 — 그 전 상태가 맞으면 PT_OVERRIDE 로",
-    "I6": "사출 중 안정값이라 K 잡음이 커서 건강일이 적다 (사이클 약 30%)",
+    "I7": "수동 지정 — 9/23 이후 안정 상태. 그 전 톱니(드리프트) 구간은 이상으로 잡힌다",
+    "I3": "자동(9/18 이후) 유지 — 9/18 12~13시 한 시간 만에 K +4% → −1% 계단, 전후 모두 평평. 조정·청소 작업 뒤로 판단",
+    "I6": "사출 중 안정값이라 K 잡음이 커서 건강일이 적다 (사이클 약 34%)",
 }
 
 SURFACE, INK, INK2, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#e1e0d9", "#c3c2b7"
@@ -90,16 +100,27 @@ def event_mask(c, pump):
     return m
 
 
-def load_cycles(pump):
-    """기준선 학습·평가에 쓰는 사이클 — 주된 안정 출처, Hz 한 단계, 알람·정지 제외, 이벤트·제외일 표시."""
-    c = load_feat(pump)
-    src = main_src(c)
-    c = c[(c.steady_src == src) & (c.n_hz_levels == 1) & ~c.flag_any].dropna(subset=["FT", "PT", "Hz", "mu_rel"])
-    c = c[(c.FT > 0) & (c.Hz > 0)].copy()
+def mark(c, pump):
+    """day · excluded(제외일·이벤트) · split 컬럼."""
+    c = c.copy()
     c["day"] = c.t_start.dt.normalize()
     c["excluded"] = c.day.isin(pd.to_datetime(EXCLUDE_DAYS)) | event_mask(c, pump)
     c["split"] = np.where(c.t_start >= TEST_START, "test", np.where(c.t_start >= VAL_START, "val", "train"))
-    return c, src
+    return c
+
+
+def load_all_cycles(pump):
+    """알람·정지 제외, 값 있는 사이클 전부 (모든 안정 출처, 단일·다단 Hz)."""
+    c = load_feat(pump)
+    c = c[~c.flag_any].dropna(subset=["FT", "PT", "Hz", "mu_rel"])
+    return mark(c[(c.FT > 0) & (c.Hz > 0)], pump)
+
+
+def load_cycles(pump):
+    """기준선 학습·평가에 쓰는 사이클 — 펌프의 주된 안정 출처(단일·다단 Hz 모두)."""
+    c = load_all_cycles(pump)
+    src = main_src(c)
+    return c[c.steady_src == src].copy(), src
 
 
 def load_circ(pump):
@@ -115,10 +136,29 @@ def load_circ(pump):
 # --------------------------------------------------------------------------- #
 # 평소(건강) 배관 상태
 # --------------------------------------------------------------------------- #
+def pipe_dev(c):
+    """사이클 K 를 같은 SV 클래스 중앙값 대비 % 로 (c 안의 중앙값 기준)."""
+    med = c.groupby("SV_class").K.median()
+    return (c.K / c.SV_class.map(med) - 1) * 100
+
+
+def healthy_from_fitted(c, pt_fit):
+    """저장된 기준선 JSON 의 pt_fit(건강일·기준 수준)으로 같은 건강 사이클 마스크를 다시 만든다.
+    c 는 기준선을 맞출 때와 같은 후보 집합(테스트 전·제외 뺀 것)이어야 같은 결과가 나온다."""
+    k = pipe_dev(c)
+    hourly = k.groupby(c.t_start.dt.floor("h")).transform("median")
+    return c.day.isin(pd.to_datetime(pt_fit["healthy_days"])) & ((hourly - pt_fit["level_pct"]).abs() <= HOUR_BAND)
+
+
+def healthy_hours(c, pt_fit):
+    """건강 사이클이 있는 시간(floor h) 집합 — 주된 출처 사이클로 정한 건강 판정을 다른 출처 사이클에 넓힐 때."""
+    m = healthy_from_fitted(c, pt_fit)
+    return set(c.t_start[m].dt.floor("h"))
+
+
 def select_healthy(c, pump):
     """c: 학습 후보 사이클(테스트·제외 이미 뺀 것). 반환 (사이클 마스크, 일별 K %, 정보 dict)."""
-    med = c.groupby("SV_class").K.median()
-    k = (c.K / c.SV_class.map(med) - 1) * 100
+    k = pipe_dev(c)
     daily = k.groupby(c.day).median()
 
     if pump in PT_OVERRIDE:
@@ -182,7 +222,7 @@ def fit_pump(pump, settings):
     ev = evaluate(base, c, circ_all)
     base.fitted_on.update({
         "created": datetime.now().isoformat(timespec="seconds"), "generated_by": "baseline/make_baselines.py",
-        "steady_src": src, "single_hz_only": True, "split": {"val_start": VAL_START, "test_start": TEST_START},
+        "steady_src": src, "hz_levels": "all", "split": {"val_start": VAL_START, "test_start": TEST_START},
         "exclude_days": EXCLUDE_DAYS, "events": [e for e in EVENTS if e[0] == pump],
         "pump_fit": {"start": str(cand.t_start.min()), "end": str(cand.t_start.max()), "n": int(len(cand))},
         "pt_fit": {**h_info, "n": int(pt_mask.sum()), "params": {"RUN_RANGE": RUN_RANGE, "DAY_BAND": DAY_BAND,
