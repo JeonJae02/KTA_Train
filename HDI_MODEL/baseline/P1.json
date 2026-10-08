@@ -1,0 +1,120 @@
+{
+ "pump": "P1",
+ "material": "POL",
+ "r": 0.6344562647754137,
+ "pump_coef": [
+  0.6370682568801763,
+  0.0034179909967425736,
+  -0.001133583442649007,
+  -0.006626854675259175
+ ],
+ "pt_coef": [
+  38.637310828576936,
+  0.010216861548037776,
+  7.761742512517738e-06
+ ],
+ "circ_coef": [
+  0.6425081883310338,
+  -0.0002972268756739563
+ ],
+ "circ_hz": 2000.0,
+ "fitted_on": {
+  "n_cycles": 47369,
+  "n_outliers": 82,
+  "n_pt_cycles": 36799,
+  "n_pt_outliers": 3,
+  "start": "2026-09-10 06:51:08.511250",
+  "end": "2026-10-03 23:56:11.401616",
+  "T_range": [
+   19.4,
+   23.7
+  ],
+  "settings_version": "2026-10-07",
+  "material_name": "TM-337",
+  "created": "2026-10-08T14:26:43",
+  "generated_by": "baseline/make_baselines.py",
+  "steady_src": "clean",
+  "single_hz_only": true,
+  "split": {
+   "val_start": "2026-09-28",
+   "test_start": "2026-10-05"
+  },
+  "exclude_days": [
+   "2026-09-27"
+  ],
+  "events": [],
+  "pump_fit": {
+   "start": "2026-09-10 06:51:08.511250",
+   "end": "2026-10-03 23:56:11.401616",
+   "n": 47369
+  },
+  "pt_fit": {
+   "rule": "auto",
+   "run": [
+    "2026-09-15",
+    "2026-09-23"
+   ],
+   "level_pct": -0.42,
+   "healthy_days": [
+    "2026-09-10",
+    "2026-09-15",
+    "2026-09-16",
+    "2026-09-17",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-22",
+    "2026-09-23",
+    "2026-09-29",
+    "2026-09-30",
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-03"
+   ],
+   "excluded_days": [
+    "2026-09-11",
+    "2026-09-12",
+    "2026-09-14",
+    "2026-09-28"
+   ],
+   "n_hours_dropped": 4,
+   "n": 36799,
+   "params": {
+    "RUN_RANGE": 4.0,
+    "DAY_BAND": 3.0,
+    "HOUR_BAND": 5.0
+   }
+  },
+  "circ_fit": {
+   "n_windows": 3863
+  },
+  "material_verified": true,
+  "review": null,
+  "eval": {
+   "train": {
+    "n": 33158,
+    "pump_resid_med": -0.051,
+    "pump_resid_spread": 0.173,
+    "r_phys_med": 1.0144,
+    "r_phys_spread": 0.0272,
+    "circ_resid_med": -0.0
+   },
+   "val": {
+    "n": 14211,
+    "pump_resid_med": 0.085,
+    "pump_resid_spread": 0.273,
+    "r_phys_med": 0.985,
+    "r_phys_spread": 0.0294,
+    "circ_resid_med": -0.002
+   },
+   "test": {
+    "n": 6536,
+    "pump_resid_med": 0.043,
+    "pump_resid_spread": 0.279,
+    "r_phys_med": 0.9968,
+    "r_phys_spread": 0.0199,
+    "circ_resid_med": -0.002
+   }
+  }
+ }
+}

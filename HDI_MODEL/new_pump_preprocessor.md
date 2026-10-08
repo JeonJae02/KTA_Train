@@ -2,8 +2,10 @@
 
 코드: `HDI_MODEL/new_pump_preprocessor.py`
 피처 선정 근거: `HDI_MODEL/펌프_피처_정리.md` · 모델 구조: `HDI_MODEL/예지보전_설계정리.md`
-검증 노트북: `now_vis.ipynb`, `I1_FT_SV_괴리_원인규명_9월29일.ipynb`, `new_vis.ipynb`
-검증 펌프: **P1(BACK 폴리올), I1(ISO)** — 최종 수정 2026-10-07
+설정: `HDI_MODEL/pump_settings.json` ← `HDI_MODEL/make_pump_settings.py` 로 생성 (JSON 직접 수정 금지)
+데이터: `extract_pump_cache.py` (원시 → `cache/pump_raw`) · `build_pump_features.py` (사이클 → `cache/pump_feat`)
+검증 노트북: `now_verif.ipynb` (14대), `now_vis.ipynb`, `I1_FT_SV_괴리_원인규명_9월29일.ipynb`, `new_vis.ipynb`
+원료 점도 검증: **P1(TM-337), I1(TM-20)** 만 — 나머지는 이름·탱크로 넣은 임시값. 최종 수정 2026-10-08
 
 ---
 
@@ -25,42 +27,63 @@ SV 를 건강 피처의 기준으로 쓰지 않는 이유: 펌프는 개루프(H
 
 ## 2. 사용법
 
-### 학습 (오프라인)
+### 구조 — 상태기계 하나로 실시간·배치 공용
 
-```python
-from new_pump_preprocessor import PUMPS, PumpBaseline, extract_cycles, circulation_windows, \
-    add_baseline_features, required_tags
-cfg = PUMPS["P1"]
-raw = extractor.get_data(start, end, required_tags(cfg))     # 펌프 한 대 분량
-
-cyc  = extract_cycles(raw, cfg)                              # ① 기준선 없이 추출 (플래그만 달림)
-circ = circulation_windows(raw, cfg)
-base = PumpBaseline.fit(cyc[~cyc.flag_any], cfg, circ=circ)  # ② 정상 사이클로 기준선
-base.save("baseline_P1.json")
-cyc  = add_baseline_features(cyc, base)                      # ③ 기준선 피처 추가
+```
+PumpSetup(펌프)            설정 JSON 읽기 + 점도 조회표 생성 (프로세스 시작 때 한 번)
+PumpProcessor.update(틱)   → {"tick": 틱 출력, "cycle": 사이클 피처 | None, "alerts": [경보]}
+run(raw, setup, base)      과거 데이터를 같은 PumpProcessor 에 틱 순서대로 흘린 것 (= 배치)
 ```
 
-- 기준선은 **정상 구간**으로 맞춘다. 노즐을 크게 만진 구간(유로 저항 계단)·Auto-Cal 직후 이상 구간은 빼는 게 좋다
+틱이 들어온 시점까지의 정보만 쓴다(인과적). 증압→안정 꺾임은 다음 FT 기록점이 와야 확정되므로 확정 전 틱은 "증압" 이다.
+
+### 학습 데이터 만들기 (오프라인)
+
+```bash
+python HDI_MODEL/make_pump_settings.py              # 설정 JSON (topology.json 에서 펌프-탱크)
+python HDI_MODEL/extract_pump_cache.py              # 원시 → cache/pump_raw (하루·펌프 단위, 서버 부담 최소)
+python HDI_MODEL/build_pump_features.py             # 사이클·순환창·경보 → cache/pump_feat (기준선 없이)
+```
+
+```python
+from build_pump_features import load_feat
+from new_pump_preprocessor import PumpSetup, PumpBaseline, add_baseline_features
+
+setup = PumpSetup("P2", allow_unverified=True)       # 원료 미검증 펌프는 allow_unverified 필요
+cyc = load_feat("P2")                                # 사이클 표 (기준선 무관 피처)
+cyc = cyc[(cyc.steady_src == "clean") & (cyc.n_hz_levels == 1)]
+ref = cyc[~cyc.flag_any & cyc.t_start.between("2026-09-15", "2026-09-24")]   # P2 는 9/10~14 배관 저항이 높았다 (5절)
+base = PumpBaseline.fit(ref, setup,
+                        circ=load_feat("P2", "circ"))
+base.save("baseline_P2.json")
+cyc = add_baseline_features(cyc, base)               # pump_resid, r_phys, FT_e 추가
+```
+
+- **14대 기준선은 `HDI_MODEL/baseline/make_baselines.py` 가 5절 규칙대로 자동 생성한다** (`baseline/{펌프}.json`, 설명은 `baseline/README.md`).
+  위 코드는 원리를 보여 주는 예시
+- `fit(..., pt_cycles=...)` 로 압력 기준선만 다른 사이클(건강 구간)로 맞출 수 있다. 이상치(FT≈0 등)는 `fit` 안에서 2단계 최소제곱으로 걸러진다
 - 기준선 JSON 은 모델과 함께 버전 관리한다
+- 틱 표는 캐시에 저장하지 않는다(펌프당 수백만 행). 틱 AE 학습 땐 필요한 구간만 `run(raw, setup, base)` 로 다시 만든다
 
 ### 실시간
 
 ```python
-rt = PumpCycleRealtime(PUMPS["P1"], PumpBaseline.load("baseline_P1.json"))
+proc = PumpProcessor(PumpSetup("P1"), PumpBaseline.load("baseline_P1.json"))
 while True:
-    feat = rt.update(now, row)    # row = {태그: 값}. 이번 틱에 바뀐 것만 넣어도 된다 (내부 ffill)
-    if feat is not None:          # 사이클 종료 + 복귀창(5초) 뒤에 한 번 나온다
-        ...                       # 사이클 AE · 기록 테이블
+    out = proc.update(now, row)   # row = {태그: 값}. 이번 틱에 바뀐 것만 넣어도 된다 (내부 ffill)
+    out["tick"]                   # 틱 AE 입력
+    out["cycle"]                  # 사이클 끝 + 복귀창(5초) 뒤 한 번 — 사이클 AE · 기록 테이블
+    out["alerts"]                 # ft_timeout / r_early
 ```
 
-- 배치 `extract_cycles` 와 **같은 `cycle_features` 함수**를 쓴다. P1 9/22 08~10시 13,137틱 재생 → 413사이클, **배치와 전 피처 100% 일치**
+- 배치 `run` 과 실시간은 같은 객체라 피처가 100% 같다
 - 데이터가 사이클 도중부터 시작하면 그 사이클은 버린다 (켜짐 전환을 실제로 본 사이클만)
 
-### 필요한 태그 (`required_tags(cfg)`)
+### 필요한 태그 (`setup.required_tags()`)
 
-`Pump_BuildUp_*`, `g_s_SV_*`, `Hz_Out_*`, `Scale_Out___FT_*`, `Scale_Out___PT_*`, `Scale_Out___TT_*`,
-사출 신호(`Shot_Injection_HD1_P1` — **I1 은 P1 과 같은 헤드·슬롯이라 이 신호를 공유**), 알람 4개, `Auto_Running`.
-알람·`Auto_Running` 이 없으면 플래그가 덜 달린다(에러는 아님). 필수 6개가 없으면 `KeyError`.
+`Pump_BuildUp_*`, `g_s_SV_*`, `Hz_Out_*`, `Scale_Out___FT_*`, `Scale_Out___PT_*`,
+`Scale_Out___TT_{탱크}`(펌프가 아니라 **원료 탱크** 기준 — P2 → TT_P5), `Shot_Injection_{헤드}_P{슬롯}`(ISO 는 같은 번호 폴리올과 공유),
+알람 4개, `Auto_Running`. 필수 6개가 없으면 `KeyError`.
 
 ---
 
@@ -83,6 +106,8 @@ while True:
 | `dHz_prev` | 이번 첫 틱 Hz − 직전 사이클 Hz | 레시피 점프 크기 (`Prev_SV_Diff` 대체) | 실 |
 | `P0` | 켜지기 직전 틱 PT | 순환 중 압력 = 배관 상태 + 온도 | 실·사 |
 | `Gap_sec` | 이번 시작 − 직전 사이클 마지막 켜짐 틱 | 운전 리듬 | 기록 |
+| `steady_src` | `clean`: 사출 전 안정 틱 / `shot`: 사출 중 안정 틱 (clean 이 3틱 미만일 때) | **안정값의 출처. PT·K 수준이 달라 섞지 말 것** | 필터 |
+| `n_hz_levels` | 사이클 안 서로 다른 Hz 개수 | 다단 사출 레시피 (P2·I2 36%, P7·I7 52%, P3·I3 30%) | 필터 |
 
 ### B. 품질 — SV 기준
 
@@ -103,7 +128,7 @@ while True:
 | **`t_self`** | FT 가 0.95·med_S'(FT) 이상에 처음 든 시각 (기록점 보간) | 응답 속도. **SV·Hz·온도 무관** | 사·**추** |
 | `decel_half_sec` | 꺼진 뒤 FT 가 (FT_off + FT_floor)/2 를 처음 지난 시각 | 모터가 20 Hz 로 감속하는 속도 | 사·**추** |
 | `ft_cv` | std_S'(FT) / med_S'(FT) × 100 | 회전 불균일 | **추만** (사이클 단위는 잡음) |
-| 순환 `circ_pump_resid` (`circulation_windows`) | 20 Hz 순환 5분 창의 FT/Hz ÷ 순환 기준선 − 1 | 생산 전 표준 시험 (`morning=True` 창) | 추 |
+| 순환 `circ_pump_resid` (`circulation_windows`) | 순환 Hz(펌프별) 5분 창의 FT/Hz ÷ 순환 기준선 − 1 | 생산 전 표준 시험 (`morning=True` 창) | 추 |
 
 **`pump_resid` 기준선 — 원료별**
 
@@ -112,7 +137,8 @@ while True:
 | POL | a + b·h + c·h² + d·(μ − 1) | 누설이 작아 회전당 유량이 속도를 따른다 (슬립 직선 r = −0.44 로 안 맞음) |
 | ISO | a + b·(PT/Hz × 1000) / μ | 누설이 크고 압력/점도에 비례 (r = −0.94) |
 
-순환 기준선도 같은 원리: POL 은 a + b·(μ−1), ISO 는 a + b·(PT/2000×1000)/μ (ISO 는 압력항이 없으면 노즐 상태에 끌려간다).
+순환 기준선도 같은 원리: POL 은 a + b·(μ−1), ISO 는 a + b·(PT/순환Hz×1000)/μ (ISO 는 압력항이 없으면 노즐 상태에 끌려간다).
+14대 검증(now_verif §5): ISO 는 7대 중 6대에서 누설식이 가장 좁고, 폴리올 2차식은 레시피 의존(η²)을 크게 줄인다(P1 0.66→0.07).
 
 ### D. 배관·노즐 — 물리 기대값 기준
 
@@ -123,7 +149,7 @@ while True:
 | **`r_phys`** | PT / (c + R·μ·FT_e + K·FT_e²) | 기대 압력 대비 비율. **POL 의 주 배관 지표** (`r_steady` 대체) | 실·사·**추** |
 | `pt_std` | std_S'(PT) | 헌팅·채터링 | 사 |
 | `release_half_sec` | 꺼진 뒤 PT 가 (PT_off + PT_floor)/2 를 처음 지난 시각 | 밸브가 열려 압력이 빠지는 속도 | 사·**추** |
-| 순환 `K_circ` (`circulation_windows`) | 20 Hz 순환 창의 PT/FT² × 10⁵ | 생산 전 노즐 상태 | 추 |
+| 순환 `K_circ` (`circulation_windows`) | 순환 창의 PT/FT² × 10⁵ (FT=0 이면 NaN) | 생산 전 노즐 상태 | 추 |
 
 - POL 물리식은 점성 마찰 항(R·μ·FT_e)이 PT 의 약 4분의 1 이다. ISO 는 노즐 항이 지배해 R 이 물리적 의미가 없다(학습값이 음수로 나옴) — **ISO 는 `K` 를 주 지표로** 쓰고 `r_phys` 는 보조로
 
@@ -135,11 +161,11 @@ while True:
 | `n_ticks`, `duration_sec`, `n_shot_ticks`, `n_clean_ticks` | 사이클 길이·사출 영향 틱 수 |
 | `flag_alarm`, `flag_stopped`, `flag_any` | 사이클 구간 [시작, 끝 + 복귀창] 에 알람 4개 / `Auto_Running==0`. **제외는 하지 않고 표시만** |
 
-### 틱 프레임 (`tick_frame`) — 틱 AE 입력
+### 틱 출력 (`PumpProcessor.update()["tick"]`, `run()` 의 ticks) — 틱 AE 입력
 
 | 컬럼 | 계산식 | 뜻 |
 |---|---|---|
-| `phase` | 증압(켜짐~꺾임) / 안정 / 복귀(꺼진 뒤 5초) | 꺾임 = FT 기록점 기울기가 최대 이후 처음 최대의 20% 미만 (설계정리 4절) |
+| `phase`, `ph_buildup`/`ph_steady`/`ph_decay` | 증압(켜짐~꺾임) / 안정 / 복귀(꺼진 뒤 5초) + one-hot | 꺾임 = FT 기록점 기울기가 최대 이후 처음 최대의 20% 미만 — **실시간으로는 다음 기록점이 와야 확정** (설계정리 4절) |
 | `elapsed` | 그 구간 안 경과초 | |
 | `err_sv` | (SV − FT)/SV × 100 | 품질 |
 | `err_fte` | (FT_e − FT)/FT_e × 100 | 건강 (Auto-Cal 무관) |
@@ -147,6 +173,13 @@ while True:
 | `mu_rel`, `shot`, `ft_fresh` | 점도비, 사출 영향 틱, FT 가 이 틱에 새로 기록됐나 | |
 
 P1 9/22 08~10시: 증압 구간 사이클당 중앙 3틱, 안정 구간 `err_sv` 0.8% / `err_fte` 0.1%.
+
+### 실시간 경보 (`alerts`)
+
+| 경보 | 조건 | 근거 | 현재 상태 |
+|---|---|---|---|
+| `ft_timeout` | 켜진 뒤 `FT_TIMEOUT_SEC`=3.0초까지 FT 가 SV ±3% 에 한 번도 못 들어옴 | 설계정리 4절·6절 — P1 9/14~20: 정상 최대 2.52초, 거짓 경보 0, 유량 10% 부족 98% 검출 | **P1 외 펌프에선 평소에도 울린다** (I1 하루 420건 — 개루프라 FT/SV 1.00~1.10, P2 690건 — 97% 가 다단 사이클). 다단 사이클 제외 · 최근 기준(EWMA) 대비 · 넘침/부족 분리로 다시 짤 것 |
+| `r_early` | 켜진 뒤 1.6초까지 PT 최대 상승 ÷ 기대 상승 < 0.7 | 설계정리 7절 | 기준선이 있어야 계산됨. 분모를 물리 기대값으로 바꿔 **0.7 재검증 필요** |
 
 ---
 
@@ -156,6 +189,8 @@ P1 9/22 08~10시: 증압 구간 사이클당 중앙 3틱, 안정 구간 `err_sv`
 |---|---|---|
 | 안정 구간 S | 대표 Hz(최빈값) 틱 중 그 Hz 가 시작된 뒤 `STEADY_MIN`=5 틱 이후 | Hz 가 바뀐 직후는 증압 중 (전류 노트북) |
 | S' | S 에서 사출 시작 + `INJ_TICKS`=4 틱 제외 | 사출 때 압력이 원래 떨어짐. 섞으면 사출 횟수를 셈 (new_vis 12) |
+| S' 대체 | S' 가 `MIN_CLEAN_TICKS`=3 미만이면 S(사출 중 포함)를 쓰고 `steady_src="shot"` | HD2(P3·I3)는 사출이 대표 Hz 구간을 덮어 S' 가 없다 (안정 구간의 97% 가 사출 중). 예전엔 이런 사이클을 버려 P3 이 272개만 남았다 |
+| 펌프별 덮어쓰기 | P6·I6: `STEADY_MIN` 4, `MIN_CYCLE_TICKS` 7 (`make_pump_settings.PARAM_OVERRIDES`) | 켜짐 7~9틱, FT 는 4틱째 99% |
 | 도달 시각 보간 | 선을 넘기 직전의 **실제 기록점**(같은 값이 이어지면 거슬러 감)과 진입 틱 사이 직선 보간 | FT 새 값은 틱의 56% 뿐 (설계정리 6절) |
 | `TCROSS_BAND` | 0.03 | 5% 는 둔감, 2% 는 정상 미진입 (new_vis 11) |
 | `TSELF_LEVEL` | 0.95 | 자기 안정값 95% |
@@ -164,14 +199,63 @@ P1 9/22 08~10시: 증압 구간 사이클당 중앙 3틱, 안정 구간 `err_sv`
 | 유량 바닥값 | 꺼진 뒤 3초 이후 FT 중앙값 (= 20 Hz 순환 유량) | new_vis 는 1285 고정 — 펌프마다 자동으로 맞도록 바꿈 |
 | 반감 시각 보간 | 시작값을 t=0 에 두고, 같은 값(묵은 틱)을 뺀 기록점 사이 보간 | new_vis 15 |
 | 점도 | Andrade 지수식, **0.1℃ 정수 원값 조회표** (15~40℃, 251칸) | 근사 오차 0. "1℃ 바뀔 때만 갱신" 은 POL PT 기대값 최대 1.6% 오차 (now_vis §4-3) |
-| 원료 상수 B | P1: TM-337 5756 K, I1: TM-20 1921 K | 2013 원료표. **현재 원료 TDS 로 갱신 필요** |
-| 순환 창 | `Hz_Out`=2000, BuildUp=0, FT>300, 5분, 창당 30틱 이상. 직전 창과 30분 넘게 떨어지면 `morning` | |
+| 원료 상수 B | P1: TM-337 5756 K, I1: TM-20 1921 K, 나머지 임시 | 2013 **북경공장** 원료표. 데이터 추정 I1 ≈ 1000 (750~1500). **현재 원료 TDS 로 갱신 필요** |
+| 순환 창 | `Hz_Out` = 펌프별 `circ_hz`(P1·I1 20, I7 30, 나머지 25 Hz), BuildUp=0, FT>300, 5분, 창당 30틱 이상. 직전 창과 30분 넘게 떨어지면 `morning` | 4주 동안 날마다 100% 같은 값 |
+| 기준선 적합 | 최소제곱 → 상대잔차가 중앙값에서 5·MAD(최소 0.5%) 넘는 점을 빼고 다시 | P7 기준 주에 섞인 유량계 고장 사이클(FT≈0)이 계수를 +3.7% 끌고 갔다 |
+| FT = 0 | `K`, `ft_cv` 는 NaN. 사이클은 버리지 않는다 | 지령은 있는데 안 나옴 = 진단 대상 |
 | PT 16비트 | > 32767 이면 − 65536 | 설계정리 2절 |
 | 온도 태그 | `Scale_Out___TT_*` = `TK_Temp_PV_*` (같은 센서, 워킹탱크 쪽) | I1 노트북 §11-7 |
 
 ---
 
-## 5. 검증 결과 (이 코드로 다시 돌린 값)
+## 5. 기준선 정리 — 무엇이 있고, 언제 다시 맞추나
+
+### 기준선 3개 (+ 기준선이 아닌 것)
+
+| 기준 | 식 | 피처 | 펌프마다 | Auto-Cal 하면 |
+|---|---|---|---|---|
+| ① 펌프 기준선 | FT/Hz = POL a+b·h+c·h²+d·(μ−1) / ISO a+b·(PT/Hz·1000)/μ | `pump_resid`, `err_fte`, `FT_e` | 다름 | **안 바뀜** |
+| ② 압력 기준선 | PT = c + R·μ·FT_e + K·FT_e² | `r_phys`, `pt_ratio`, `r_early` | 다름 | **안 바뀜** — 배관·노즐 상태가 바뀌면 바뀜 |
+| ③ 순환 기준선 | 순환 FT/Hz = POL a+b·(μ−1) / ISO a+b·(PT/순환Hz·1000)/μ | `circ_pump_resid` | 다름 | **안 바뀜** (순환 Hz 는 Auto-Cal 표를 안 거침) |
+| (기준선 아님) SV 대비 | FT/SV, Hz/SV, `t_cross`, `ft_timeout` | 품질 | 다름 | **바뀜** — 다시 학습할 대상이 아니라 **구간 경계로 표시** |
+
+①~③을 Hz 기준으로 둔 이유가 이것이다. Auto-Cal 은 "SV 를 몇 Hz 로 돌릴지" 표만 바꾸고 "몇 Hz 로 돌리면 얼마나 나오나" 는 그대로다.
+14대 검증(now_verif §3): P1 Auto-Cal 2번 모두 FT/Hz 0.0%, I1·I2 펌프 잔차 ±1% 안 (FT/Hz 가 움직인 건 같은 시기 K 변화에 따른 누설).
+**예외 P2(10/5): FT/Hz +0.9%, 원인 미상 — 관찰 중.**
+
+Auto-Cal 은 "그 순간 FT/SV = 1" 이 되게 Hz 표를 다시 쓴다. ISO 는 배관 변화까지 Hz 로 흡수하므로 **Auto-Cal 직후 FT/SV ≈ 1 은 정상의 증거가 아니다.**
+
+### 어느 기간으로 맞추나 — 펌프 기준선과 압력 기준선이 다르다
+
+09-10~10-07 캐시로 세 기간을 비교했다(학습은 펌프당 0.01초 — 기간 길이는 시간 문제가 아니다).
+
+| | 기준 주 9/14~19 | 연휴 전 9/10~23 | 전체 9/10~10/7 |
+|---|---|---|---|
+| ① 펌프 잔차 — 일별 최대 \|%\| (14대) | 0.09~1.39 | 0.11~1.73 | 0.12~1.47 |
+| ① 10월 잔차 퍼짐 % | 거의 같음 | 거의 같음 | 거의 같음 |
+| ① P7 9/17 유량계 고장 | −98% | −98% | −98% (이상치 제거가 막아 줌) |
+| ② `r_phys` 0점 | 건강한 배관 상태 = 1.0 | 비슷 | **I7 −6%, P2 −3% 내려감** |
+
+- **① 펌프 기준선은 전체 기간으로 맞춰도 된다.** 압력 범위가 넓을수록 ISO 누설식이 잘 맞는다. 다만 모델 평가용 테스트 구간은 빼고 맞춘다(그래야 평가가 정직하다).
+- **② 압력 기준선은 "배관이 건강했던 구간" 으로 맞춘다.** 전체 기간엔 저항이 높던 상태(I7 9/21~ +14%, P2 9/10~14 +15%)가 섞여 1.0 이 "평균 상태" 가 된다 — 모양은 같고 0점만 옮겨진다. 이벤트 목록(now_verif §4)에 있는 구간을 빼고 맞춘다.
+
+### 언제 다시 맞추나
+
+| 상황 | 다시 맞출 것 |
+|---|---|
+| Auto-Cal, 레시피 Gain 조정 | **없음** (SV 대비 피처의 구간만 끊는다 — `Auto_Cal_Done` 태그 또는 Hz/SV 표 변화로 검출) |
+| 펌프 교체·오버홀 | ① |
+| 유량계 교체, Imp/L·비중 설정 변경 | ①②③ (FT 눈금이 바뀜) |
+| 노즐·배관 영구 변경 | ② |
+| 원료 변경 | B → 전부 |
+| 마모·노후화 | **다시 맞추지 않는다** — 고정 기준에서 벗어나는 것 자체가 추세 신호 |
+
+장기 추세는 **고정 기준**, 실시간 짧은 창 규칙은 **최근 기준(EWMA)** — 후자는 스스로 따라가므로 재학습 절차가 없다.
+기준선 계수 자체(ISO 누설 k 등)를 주 단위로 다시 맞춰 기록하면 그 변화가 노후화 지표다.
+
+---
+
+## 6. 검증 결과 (이 코드로 다시 돌린 값)
 
 ### P1 — 9/14~20 으로 기준선, 네 기간에 적용 (중앙값)
 
@@ -184,7 +268,7 @@ P1 9/22 08~10시: 증압 구간 사이클당 중앙 3틱, 안정 구간 `err_sv`
 
 - 품질 피처(`FT_SV`, `Hz_SV`)는 Auto-Cal 에 따라 움직이고, **건강·모양 피처는 네 기간 내내 거의 그대로**다
 - 반감 시각 두 개도 Auto-Cal 전후로 안정 (감속 1.36~1.37초, 압력 해제 0.56~0.59초 — new_vis 15 의 1.4 / 0.6 과 일치)
-- `r_phys` 는 기간 사이에 −2.5% 이동 — 연휴 뒤 배관 상태가 실제로 바뀐 것 (아래 6절)
+- `r_phys` 는 기간 사이에 −2.5% 이동 — 연휴 뒤 배관 상태가 실제로 바뀐 것 (아래 7절)
 
 ### I1 — 9/28~10/1 정상 구간으로 기준선
 
@@ -197,17 +281,27 @@ P1 9/22 08~10시: 증압 구간 사이클당 중앙 3틱, 안정 구간 `err_sv`
 - 순환 잔차는 압력항을 넣은 뒤 −0.7~+0.8% (넣기 전엔 노즐 상태에 끌려가 −3.0~+2.0%)
 - 샷 혼합비: 9/29 오전 P1/I1 편차 중앙 **+7.4%** (9/28 밤 0.0%)
 
+### 14대 — now_verif.ipynb
+
+| 가설 | 결과 |
+|---|---|
+| Hz/SV 는 Auto-Cal 때만 바뀐다 | 성립. HD1 Auto-Cal 날 외 0% (I3 레시피 단위 0.2~0.7% 조정만 예외) |
+| 배관(K)·펌프(잔차) 분리 | 성립. K ±10~55% 에도 펌프 잔차 일별 ±1.4% 안 |
+| 센서 고장 서명 | 9/17 06:50~10:45 P7 유량계 고장: FT/SV 0.02, `r_phys` 0.99, 짝 펌프 I7 정상 |
+
 ---
 
-## 6. 주의 · 한계
+## 7. 주의 · 한계
 
 | 항목 | 내용 |
 |---|---|
 | 짧은 창 규칙의 기준 | "10사이클 평균 < 임계" 를 학습 기준 고정으로 돌리면 9/28 이후 하루 수백 건 — 배관 상태가 실제로 바뀌었기 때문. **짧은 창은 최근 기준(EWMA 등) 대비**, 학습 기준 대비 이동은 추세가 맡는다 (now_vis §7-2) |
-| 기준선 갱신 | 노즐 조정·부품 교체 뒤엔 `r_phys`·`K` 수준이 바뀐다. 이벤트(유로 저항 계단)를 기록하고, 정비 뒤 기준선을 다시 맞춘다 |
+| 기준선 갱신 | 5절 표. 노즐 조정·부품 교체 뒤엔 `r_phys`·`K` 수준이 바뀐다 — 이벤트를 기록하고 정비 뒤 ② 를 다시 맞춘다 |
+| ISO 기준선 외삽 | 학습 구간의 압력 범위를 벗어나면 누설식이 덜 맞는다 (I1: K 가 크게 튈 때 시간 단위 잔차 −3%) — 노즐 상태가 여러 개 섞인 넓은 구간으로 맞출 것 |
+| 펌프 간 비교 | 기종·유량계 환산이 펌프마다 다르다 (FT/Hz 0.25~0.84). 절댓값 비교 금지, 기준선은 펌프별 |
 | 온도 이탈 | 9/27 (연휴, 재료 26~33℃) 은 점도 보정 후에도 ISO 펌프 잔차 +2%(과보정), 순환 잔차 −1.5%. 센서가 워킹탱크 쪽이라 펌프 내부 온도와 다를 수 있다 |
 | `t_self` 의 사각 | 자기 안정값 기준이라 **진폭 저하(토출 부족)는 원리상 못 본다** → `pump_resid`, `FT_SV` 와 짝으로 |
 | 인버터 내부 | 전류·실주파수가 없어 펌프 마모와 모터·인버터 문제는 못 가른다. `t_self`·`decel_half_sec` 이 같이 늘면 모터·인버터 쪽 가능성 |
-| 펌프 확장 | `PUMPS` 에는 검증한 P1·I1 만 있다. 다른 펌프는 원료(B), 온도 태그, 사출 태그(PUMP_MAP 의 head/slot), 기준선 형태(POL/ISO)를 확인하고 추가 |
+| 원료 미검증 펌프 | 14대 모두 설정에 있지만 원료 B 는 P1·I1 만 검증. 나머지는 `allow_unverified=True` 로 쓰고, 원료 확정 뒤 `make_pump_settings.MATERIAL_OF` 를 고치고 다시 빌드 |
 | 샷 혼합비 | HD1 리포트 슬롯만 확인. 다른 헤드는 `Foam_Record.il` 에서 주소 확인 필요 |
 | 알람·정지 플래그 | 알람 4개와 `Auto_Running` 을 같이 받아야 제대로 달린다 |

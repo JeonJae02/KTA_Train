@@ -178,8 +178,12 @@ class PumpBaseline:
         return c[0] + c[1] * (np.asarray(pt, float) / self.circ_hz * 1000.0) / mu
 
     @classmethod
-    def fit(cls, cycles, setup, circ=None):
-        """cycles: run() 의 사이클 표 중 **정상 사이클만**. circ: circulation_windows() 결과(선택)."""
+    def fit(cls, cycles, setup, circ=None, pt_cycles=None):
+        """cycles   : run() 의 사이클 표 중 **정상 사이클만** — ① 펌프 기준선 (r, pump_coef)
+        circ     : circulation_windows() 결과(선택) — ③ 순환 기준선
+        pt_cycles: ② 압력 기준선만 따로 맞출 사이클 (선택). 펌프 기준선은 넓은 기간이 좋지만 압력 기준선은
+                   **배관이 건강했던 구간**으로 맞춰야 1.0 이 그 상태를 뜻한다 (new_pump_preprocessor.md 5절).
+                   없으면 cycles 로 맞춘다."""
         c = cycles.dropna(subset=["Hz", "FT", "PT", "mu_rel"])
         c = c[(c.FT > 0) & (c.Hz > 0)]
         r = float(np.median(c.FT / c.Hz))
@@ -189,15 +193,21 @@ class PumpBaseline:
         else:
             X = np.c_[np.ones(len(c)), (c.PT / c.Hz * 1000.0) / c.mu_rel]
         pump_coef, keep = _robust_lstsq(X, (c.FT / c.Hz).to_numpy())
-        fte = (c.Hz * r).to_numpy()
-        Xp = np.c_[np.ones(len(c)), c.mu_rel * fte, fte ** 2]
-        pt_coef, _ = _robust_lstsq(Xp[keep], c.PT.to_numpy()[keep])
+        if pt_cycles is None:
+            pc = c[keep]
+        else:
+            pc = pt_cycles.dropna(subset=["Hz", "FT", "PT", "mu_rel"])
+            pc = pc[(pc.FT > 0) & (pc.Hz > 0)]
+        fte = (pc.Hz * r).to_numpy()
+        Xp = np.c_[np.ones(len(pc)), pc.mu_rel * fte, fte ** 2]
+        pt_coef, pt_keep = _robust_lstsq(Xp, pc.PT.to_numpy())
         circ_coef = None
         if circ is not None and len(circ) >= 10:
             cc = circ.dropna(subset=["FT_Hz", "PT", "mu_rel"])
             xc = cc.mu_rel - 1.0 if setup.material == "POL" else (cc.PT / setup.circ_hz * 1000.0) / cc.mu_rel
             circ_coef, _ = _robust_lstsq(np.c_[np.ones(len(cc)), xc], cc.FT_Hz.to_numpy())
-        info = {"n_cycles": int(len(c)), "n_outliers": int((~keep).sum()), "start": str(c.t_start.min()), "end": str(c.t_start.max()),
+        info = {"n_cycles": int(len(c)), "n_outliers": int((~keep).sum()),
+                "n_pt_cycles": int(len(pc)), "n_pt_outliers": int((~pt_keep).sum()), "start": str(c.t_start.min()), "end": str(c.t_start.max()),
                 "T_range": [float(c.T_C.quantile(0.01)), float(c.T_C.quantile(0.99))],
                 "settings_version": setup.settings_version, "material_name": setup.material_name}
         return cls(setup.pump, setup.material, r, pump_coef, pt_coef, circ_coef, setup.circ_hz, info)

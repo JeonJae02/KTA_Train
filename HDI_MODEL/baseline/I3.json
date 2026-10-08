@@ -1,0 +1,118 @@
+{
+ "pump": "I3",
+ "material": "ISO",
+ "r": 0.4301014656144307,
+ "pump_coef": [
+  0.4365616491405015,
+  -0.00048034756632418096
+ ],
+ "pt_coef": [
+  6.895496636414582,
+  0.0028668947670169856,
+  1.5526855028174466e-05
+ ],
+ "circ_coef": [
+  0.4454806250555923,
+  -0.0012928517960554909
+ ],
+ "circ_hz": 2500.0,
+ "fitted_on": {
+  "n_cycles": 4738,
+  "n_outliers": 0,
+  "n_pt_cycles": 3278,
+  "n_pt_outliers": 42,
+  "start": "2026-09-10 07:11:14.531469",
+  "end": "2026-10-03 23:54:36.331356",
+  "T_range": [
+   21.8,
+   23.331500000000005
+  ],
+  "settings_version": "2026-10-07",
+  "material_name": "ISO-GENERIC",
+  "created": "2026-10-08T14:26:43",
+  "generated_by": "baseline/make_baselines.py",
+  "steady_src": "shot",
+  "single_hz_only": true,
+  "split": {
+   "val_start": "2026-09-28",
+   "test_start": "2026-10-05"
+  },
+  "exclude_days": [
+   "2026-09-27"
+  ],
+  "events": [],
+  "pump_fit": {
+   "start": "2026-09-10 07:11:14.531469",
+   "end": "2026-10-03 23:54:36.331356",
+   "n": 4738
+  },
+  "pt_fit": {
+   "rule": "auto",
+   "run": [
+    "2026-09-18",
+    "2026-10-03"
+   ],
+   "level_pct": -1.05,
+   "healthy_days": [
+    "2026-09-10",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-22",
+    "2026-09-23",
+    "2026-09-28",
+    "2026-09-29",
+    "2026-09-30",
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-03"
+   ],
+   "excluded_days": [
+    "2026-09-11",
+    "2026-09-12",
+    "2026-09-14",
+    "2026-09-15",
+    "2026-09-16",
+    "2026-09-17"
+   ],
+   "n_hours_dropped": 7,
+   "n": 3278,
+   "params": {
+    "RUN_RANGE": 4.0,
+    "DAY_BAND": 3.0,
+    "HOUR_BAND": 5.0
+   }
+  },
+  "circ_fit": {
+   "n_windows": 3872
+  },
+  "material_verified": false,
+  "review": "9/18 이후 K −6% 상태가 평소로 잡힌다 — 그 전 상태가 맞으면 PT_OVERRIDE 로",
+  "eval": {
+   "train": {
+    "n": 2978,
+    "pump_resid_med": -0.0,
+    "pump_resid_spread": 0.115,
+    "r_phys_med": 1.0415,
+    "r_phys_spread": 0.0484,
+    "circ_resid_med": -0.046
+   },
+   "val": {
+    "n": 1760,
+    "pump_resid_med": 0.001,
+    "pump_resid_spread": 0.143,
+    "r_phys_med": 0.9928,
+    "r_phys_spread": 0.017,
+    "circ_resid_med": 0.037
+   },
+   "test": {
+    "n": 720,
+    "pump_resid_med": -0.019,
+    "pump_resid_spread": 0.102,
+    "r_phys_med": 0.998,
+    "r_phys_spread": 0.0154,
+    "circ_resid_med": -0.105
+   }
+  }
+ }
+}
