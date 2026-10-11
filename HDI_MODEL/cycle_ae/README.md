@@ -19,6 +19,22 @@ w = win.update("P1", r["group"], r["score"], r["zmax"], t=r["t_start"],
 # → pump_level(정상/주의/알림), notify(사람에게 알림 — 한 번만), reason(최근 10사이클 최빈 이유)
 ```
 
+## 진단 — 어디가 왜 (`diagnose.py`, 규칙표·문구표 `diagnose_rules.md`)
+
+```python
+from diagnose import PumpDiagnoser
+diag = PumpDiagnoser()                                       # 프로세스 시작 때 하나
+w = win.update(..., zn={f: r[f"zn_{f}"] for f in FEATURES})  # 피처별 부호 있는 편차도 넘긴다
+diag.update("P1", w, r["t_start"])
+alerts = diag.alerts(now)   # [{relay, reason, priority, type, message, show, + pump, head, part, evidence, relay_fallback}]
+```
+
+- 펌프가 **알림 등급일 때만**, 창 10사이클의 피처 방향으로 유량계 / 펌프 토출 / 배관·노즐 저항 / 헤드 / 응답 / 패턴을 가른다
+- 출력은 HDI_Relay `Relay_Monitor` 가 받는 릴레이 경보 형식 그대로 — `show=True` 는 운영일 첫 알림, 이어지는 동안 `show=False`
+- 같은 헤드 슬롯 POL·ISO 가 같은 방향 저항이면 헤드 인젝션 SOL 릴레이로 하나로 묶는다. 30분 안 3대 이상 같은 판정이면 공통 원인 표시
+- 유량계·펌프 본체는 topology 에 릴레이가 없어 그 펌프의 PT 릴레이로 대신 띄운다(`relay_fallback=True`)
+- `python HDI_MODEL/cycle_ae/diagnose.py --validate` — 규칙표 다시 쓰고 알려진 이벤트·새 날 검증 표를 붙인다
+
 ## 구조
 
 ```
@@ -100,6 +116,7 @@ w = win.update("P1", r["group"], r["score"], r["zmax"], t=r["t_start"],
 | `dataset.py` | 학습용 표. 사이클마다 `group`, `split`, `role`(fit/calib/eval), `healthy`, `event` |
 | `model.py` | `CycleAE`, 묶음별 표준화·수준 점수, `CycleScorer` (사이클 등급), `WindowTracker` (펌프 등급·알림 — 실시간·배치 공용), `window_levels` |
 | `train.py` | 학습 → 임계값(`calibrate.compute_thresholds`) → 평가 → 저장. 저장한 것을 다시 읽어 점수·경보·이유가 같은지 확인 |
+| `diagnose.py`, `diagnose_rules.md` | 진단 규칙·문구표와 릴레이 경보 출력, 검증 |
 | `calibrate.py` | **임계값만** 다시 잡기 + 검증(학습 기간 하루 빼고, 새 날, 알려진 이벤트). 이전 값은 `meta["thresholds_prev"]` |
 | `notebook_builders/` | 테스트 노트북 생성기(`build_cae_1009.py`)와 실행기(`run_nb.py`) |
 | `artifacts/model.pt`, `meta.json` | 가중치 / 피처·묶음별 통계·두 단계 임계값(`thresholds[묶음]["warn"/"alert"]`)·설정·학습 기록·데이터셋·기준선 버전 |

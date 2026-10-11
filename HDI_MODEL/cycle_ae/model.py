@@ -49,6 +49,7 @@
 
 import json
 import os
+import warnings
 from collections import deque
 
 import numpy as np
@@ -148,6 +149,21 @@ def prepare(df, stats):
     return X, M, C
 
 
+def zsigned(df, stats):
+    """피처별 z / zq — 부호 있는 정규화 편차. ±1 = 그 피처의 정상 한계(학습 구간 99.5%). 결측·범위 밖은 NaN.
+    진단 규칙(diagnose.py)이 "어느 피처가 어느 쪽으로 얼마나" 를 보는 입력."""
+    Z = np.full((len(df), len(FEATURES)), np.nan)
+    keys = df.group.to_numpy()
+    for k in np.unique(keys):
+        if k not in stats:
+            continue
+        i = np.where(keys == k)[0]
+        s, g = stats[k], df.iloc[i]
+        for j, f in enumerate(FEATURES):
+            Z[i, j] = (g[f].to_numpy(float) - s["med"][f]) / s["scale"][f] / s["zq"][f]
+    return Z
+
+
 def zlevel(df, stats):
     """피처별 |z| / zq (자르지 않음). 결측·범위 밖은 NaN."""
     Z = np.full((len(df), len(FEATURES)), np.nan)
@@ -219,6 +235,7 @@ class WindowTracker:
         self.cool = pd.Timedelta(minutes=cooldown_min)
         self.hist, self.glevel, self.plevel, self.last_t, self.last_notify, self.reasons = {}, {}, {}, {}, {}, {}
         self.notified = {}       # pump -> 이미 알린 운영일
+        self.zwin = {}           # pump -> 최근 roll 사이클의 피처별 zn (묶음 섞임 — 정규화돼 있어 같은 척도)
 
     def _reset(self, pump):
         """재가동 — 창과 등급만 비운다. 알림 기억(60분 대기, 운영일 이유)은 남긴다."""
@@ -227,13 +244,15 @@ class WindowTracker:
             self.glevel.pop(g, None)
         self.plevel[pump] = 0
         self.reasons.pop(pump, None)
+        self.zwin.pop(pump, None)
 
     @staticmethod
     def op_day(t):
         return (t - pd.Timedelta(hours=DAY_START_HOUR)).date()
 
-    def update(self, pump, group, score, zmax, t=None, reason=None, level=None):
-        """reason·level: 이 사이클의 경보 이유와 사이클 등급 (score() 출력의 top_feature/top_dir, level) — 알림 이유 집계용."""
+    def update(self, pump, group, score, zmax, t=None, reason=None, level=None, zn=None):
+        """reason·level: 이 사이클의 경보 이유와 사이클 등급 (score() 출력의 top_feature/top_dir, level) — 알림 이유 집계용.
+        zn: 이 사이클의 피처별 부호 있는 정규화 편차 {피처: z/zq} (score() 의 zn_*) — 창 중앙값을 진단(diagnose.py)에 넘긴다."""
         if t is not None:
             t = pd.Timestamp(t)
             if pump in self.last_t and t - self.last_t[pump] > self.gap:
@@ -241,9 +260,11 @@ class WindowTracker:
             self.last_t[pump] = t
         if group not in self.thr or not np.isfinite(score):
             return {"window_level": None, "pump_level": LEVELS[self.plevel.get(pump, 0)], "notify": False,
-                    "score_med": np.nan, "zmax_med": np.nan, "reason": None}
+                    "score_med": np.nan, "zmax_med": np.nan, "reason": None, "zn_med": None}
         rq = self.reasons.setdefault(pump, deque(maxlen=self.roll))
         rq.append((reason, level in LEVELS[1:]))
+        if zn is not None:
+            self.zwin.setdefault(pump, deque(maxlen=self.roll)).append([zn.get(f, np.nan) for f in FEATURES])
         h = self.hist.setdefault(group, (deque(maxlen=self.roll), deque(maxlen=self.roll)))
         h[0].append(score)
         h[1].append(zmax)
@@ -270,20 +291,31 @@ class WindowTracker:
             else:
                 self.last_notify[pump] = t
                 self.notified[pump] = od
+        zw = self.zwin.get(pump)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)          # 피처가 창 내내 결측이면 NaN
+            zmed = dict(zip(FEATURES, np.nanmedian(np.array(zw, float), axis=0))) if zw else None
         return {"window_level": LEVELS[lv], "pump_level": LEVELS[cur], "notify": notify,
-                "score_med": ms, "zmax_med": mz, "reason": why}
+                "score_med": ms, "zmax_med": mz, "reason": why, "zn_med": zmed}
 
 
 def window_levels(df, meta):
     """배치 — df 를 시간순으로 WindowTracker 에 흘린다 (실시간과 같은 결과). 컬럼 window_level, pump_level, notify 추가."""
-    df = df.sort_values("t_start")
+    out_cols = {"window_level", "pump_level", "notify", "score_med", "zmax_med", "notify_reason"}
+    df = df.drop(columns=[c for c in df.columns if c in out_cols or c.startswith("znmed_")]).sort_values("t_start")
     wt = WindowTracker(meta)
     why = (df.top_feature + " " + df.top_dir) if "top_feature" in df else pd.Series(None, index=df.index)
     lv = df.level if "level" in df else pd.Series(None, index=df.index)
-    out = [wt.update(p, g, s, z, t, r, l) for p, g, s, z, t, r, l in
-           zip(df.pump, df.group, df.score, df.zmax, df.t_start, why, lv)]
+    zcols = [f"zn_{f}" for f in FEATURES]
+    zr = df[zcols].to_numpy(float) if set(zcols) <= set(df.columns) else None
+    out = [wt.update(p, g, s, z, t, r, l, None if zr is None else dict(zip(FEATURES, zr[i])))
+           for i, (p, g, s, z, t, r, l) in enumerate(zip(df.pump, df.group, df.score, df.zmax, df.t_start, why, lv))]
     o = pd.DataFrame(out, index=df.index)
-    return df.join(o[["window_level", "pump_level", "notify", "score_med", "zmax_med", "reason"]].rename(columns={"reason": "notify_reason"}))
+    if zr is not None:
+        zm = pd.DataFrame([x if x is not None else {} for x in o.zn_med], index=df.index).add_prefix("znmed_")
+        o = o.join(zm)
+    keep = ["window_level", "pump_level", "notify", "score_med", "zmax_med", "reason"] + [c for c in o.columns if c.startswith("znmed_")]
+    return df.join(o[keep].rename(columns={"reason": "notify_reason"}))
 
 
 # --------------------------------------------------------------------------- #
@@ -310,12 +342,14 @@ class CycleScorer:
         E = errors(self.model, X, M, C)
         df["in_scope"] = df.group.isin(self.stats).to_numpy()
         df["score"] = score_from_errors(E)
-        Z = zlevel(df, self.stats)
+        Zs = zsigned(df, self.stats)
+        Z = np.abs(Zs)
         df["zmax"] = zmax_of(Z)
         df = add_levels(df, self.thr)
         df["top_feature"], df["top_dir"] = explain(X, Z, E, df.alarm_ae.to_numpy())
         for j, f in enumerate(FEATURES):
             df[f"err_{f}"] = E[:, j]
+            df[f"zn_{f}"] = Zs[:, j]
         return df
 
     def score_one(self, cycle, pump):
