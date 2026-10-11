@@ -35,7 +35,8 @@
 - 창 등급 (`WindowTracker`): 같은 묶음 최근 10사이클의 score·zmax 중앙값을 창 임계값과 비교. 펌프 등급 = 그 펌프 묶음들 중 가장 높은 창 등급
 - **사람에게 가는 알림 = 펌프 등급이 "알림" 으로 새로 올라간 순간 한 번** (`notify`). 이어지는 동안은 다시 울리지 않는다
 - 알림을 보낸 펌프는 `COOLDOWN_MIN`(60분) 동안 다시 알리지 않는다 — 경계에서 오르내리며 한 시간에 네 번 울리던 것(P7 9/16 밤)
-- 알림 이유 `reason` = 그 펌프 최근 10사이클 중 주의 이상이었던 사이클들의 이유 최빈값 (사이클 하나의 이유는 흔들린다)
+- 알림 이유 `reason` = 그 펌프 최근 10사이클 중 주의 이상이었던 사이클들의 이유 최빈값 (사이클 하나의 이유는 흔들린다).
+  그런 사이클이 없으면(창 중앙값만 임계를 넘은 경우) 창 전체 사이클의 이유 최빈값 — 예전엔 이 경우 이유가 비었다
 - 펌프가 `RESET_GAP_MIN`(30분) 넘게 사이클이 없으면(정지·야간) 그 펌프의 창 상태를 비운다 — 아침 재가동 때의 이상을 새 알림으로
   (안 비우면 9/16 밤의 알림 상태가 이어져 9/17 아침 유량계 고장이 새 알림을 못 냈다)
 - 정상 날 펌프당 하루 알림 약 0.6회(14대 약 8회), 주의는 약 2.7회 (cycle_ae_test.ipynb §8)
@@ -232,7 +233,7 @@ class WindowTracker:
             return {"window_level": None, "pump_level": LEVELS[self.plevel.get(pump, 0)], "notify": False,
                     "score_med": np.nan, "zmax_med": np.nan, "reason": None}
         rq = self.reasons.setdefault(pump, deque(maxlen=self.roll))
-        rq.append(reason if level in LEVELS[1:] else None)
+        rq.append((reason, level in LEVELS[1:]))
         h = self.hist.setdefault(group, (deque(maxlen=self.roll), deque(maxlen=self.roll)))
         h[0].append(score)
         h[1].append(zmax)
@@ -254,7 +255,8 @@ class WindowTracker:
                 notify = False
             else:
                 self.last_notify[pump] = t
-        rs = [r for r in rq if r]
+        # 이유: 창 안의 주의 이상 사이클들 이유 최빈값. 그런 사이클이 없으면(창 중앙값만 넘은 경우) 창 전체 사이클의 최빈값
+        rs = [r for r, ab in rq if r and ab] or [r for r, _ in rq if r]
         return {"window_level": LEVELS[lv], "pump_level": LEVELS[cur], "notify": notify,
                 "score_med": ms, "zmax_med": mz, "reason": max(set(rs), key=rs.count) if rs else None}
 
