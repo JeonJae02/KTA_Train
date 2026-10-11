@@ -35,6 +35,11 @@ alerts = diag.alerts(now)   # [{relay, reason, priority, type, message, show, + 
 - 유량계·펌프 본체는 topology 에 릴레이가 없어 그 펌프의 PT 릴레이로 대신 띄운다(`relay_fallback=True`)
 - `python HDI_MODEL/cycle_ae/diagnose.py --validate` — 규칙표 다시 쓰고 알려진 이벤트·새 날 검증 표를 붙인다
 
+## 실시간 — `HDI_MODEL/Pump_Realtime_Model.py`
+
+전처리 → 채점 → 창 판정 → 진단을 tick 마다 14대 직렬로 묶은 것. `update(now, live_data)` 는 릴레이 경보 목록,
+`pump_scores()` 는 백엔드 Pump_Score 형식. 백엔드 연결 방법·필요한 태그·재생 검증은 그 파일 머리말.
+
 ## 구조
 
 ```

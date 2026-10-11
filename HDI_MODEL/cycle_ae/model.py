@@ -1,11 +1,15 @@
-"""사이클 AE — 펌프 14대 공용 조건부 오토인코더 + 채점기.
+"""사이클 AE — 펌프 14대 공용 조건부 오토인코더 + 채점기. **불러다 쓰는 부품** (직접 실행하지 않는다).
 
-    scorer = CycleScorer.load()                           # artifacts/ 읽기
-    out = scorer.score(cycles_df)                         # 배치: score, alarm, top_feature, err_* 컬럼
-    out = scorer.score_one(cycle_dict, pump="P1")         # 실시간: PumpProcessor 의 "cycle" + 기준선 피처
-    win = WindowTracker(scorer.meta)                      # 실시간 창 판정 (펌프·묶음별 최근 10사이클)
+실시간 사용은 `HDI_MODEL/Pump_Realtime_Model.py` 가 이 파일을 감싸서 한다 (백엔드는 그쪽만 연결).
+학습은 `train.py`, 임계값만 다시 잡기는 `calibrate.py`, 해석은 `diagnose.py`.
+
+    scorer = CycleScorer.load()                           # artifacts/model.pt + meta.json 읽기
+    out = scorer.score(cycles_df)                         # 배치: score, zmax, level, top_feature, err_*, zn_* 컬럼
+    out = scorer.score_one(cycle_dict, pump="P1")         # 사이클 1개: PumpProcessor 의 "cycle" + 기준선 피처
+    win = WindowTracker(scorer.meta)                      # 창 판정 (펌프·묶음별 최근 10사이클) — 하나만 만든다
     w = win.update(pump, out["group"], out["score"], out["zmax"], t=out["t_start"],
-                   reason=f'{out["top_feature"]} {out["top_dir"]}', level=out["level"])   # → pump_level, notify, reason
+                   reason=f'{out["top_feature"]} {out["top_dir"]}', level=out["level"],
+                   zn={f: out[f"zn_{f}"] for f in FEATURES})                # → pump_level, notify, reason, zn_med
 
 ## 입력
 
@@ -24,12 +28,14 @@
   |z| 20 을 넘어 임계값이 포화되고, 꼬리가 무거운 피처 하나가 판정을 독차지했다
 - 패턴·수준 둘로 나누는 이유는 train.py 머리말
 
-## 판정 — 두 단계 (2026-10-08)
+## 판정 — 두 단계 (2026-10-08 결정, 임계값 계산 2026-10-11 날짜 단위로)
 
-| 등급 | 임계값 (묶음별, 정상 점수 분위) | 쓰임 |
+| 등급 | 임계값 (묶음별) | 쓰임 |
 |---|---|---|
-| **주의** (`warn`) | 0.995 — 정상의 상위 0.5% | 대시보드·기록. 작은 드리프트는 ③ 추세에서 다시 본다 |
-| **알림** (`alert`) | 0.999 — 정상의 상위 0.1% | 사람에게 알림 |
+| **주의** (`warn`) | 정상 날 하루하루의 0.995 분위값 → 중앙값 + 4·MAD | 대시보드·기록. 작은 드리프트는 ③ 추세에서 다시 본다 |
+| **알림** (`alert`) | 정상 날 하루하루의 0.999 분위값 → 중앙값 + 4·MAD | 사람에게 알림 |
+
+임계값 숫자는 `meta.json` 에만 있고 `calibrate.py` 가 계산한다 (신경망을 다시 학습하지 않고 바꿀 수 있다).
 
 - 사이클 등급 `level` (정상/주의/알림): 그 사이클의 score 또는 zmax 가 등급 임계값을 넘음. `alarm` = 주의 이상, `alert` = 알림
 - 창 등급 (`WindowTracker`): 같은 묶음 최근 10사이클의 score·zmax 중앙값을 창 임계값과 비교. 펌프 등급 = 그 펌프 묶음들 중 가장 높은 창 등급
@@ -43,7 +49,8 @@
   그런 사이클이 없으면(창 중앙값만 임계를 넘은 경우) 창 전체 사이클의 이유 최빈값 — 예전엔 이 경우 이유가 비었다
 - 펌프가 `RESET_GAP_MIN`(30분) 넘게 사이클이 없으면(정지·야간) 그 펌프의 창 상태를 비운다 — 아침 재가동 때의 이상을 새 알림으로
   (안 비우면 9/16 밤의 알림 상태가 이어져 9/17 아침 유량계 고장이 새 알림을 못 냈다)
-- 정상 날 펌프당 하루 알림 약 0.6회(14대 약 8회), 주의는 약 2.7회 (cycle_ae_test.ipynb §8)
+- 알림 횟수: 학습 기간 하루 빼고 검증 펌프당 하루 0.15회, 학습 뒤 새 날(10/8~10) 정상 펌프 0.37회
+  (calibrate.py, cycle_ae_test_1009_1011.ipynb §8)
 - 임계값 구조: `meta["thresholds"][묶음] = {"warn": {cycle, zmax, roll, zmax_roll}, "alert": {...}}`
 """
 
