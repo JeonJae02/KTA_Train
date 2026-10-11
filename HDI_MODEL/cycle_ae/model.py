@@ -3,6 +3,9 @@
     scorer = CycleScorer.load()                           # artifacts/ 읽기
     out = scorer.score(cycles_df)                         # 배치: score, alarm, top_feature, err_* 컬럼
     out = scorer.score_one(cycle_dict, pump="P1")         # 실시간: PumpProcessor 의 "cycle" + 기준선 피처
+    win = WindowTracker(scorer.meta)                      # 실시간 창 판정 (펌프·묶음별 최근 10사이클)
+    w = win.update(pump, out["group"], out["score"], out["zmax"], t=out["t_start"],
+                   reason=f'{out["top_feature"]} {out["top_dir"]}', level=out["level"])   # → pump_level, notify, reason
 
 ## 입력
 
@@ -19,12 +22,29 @@
 - `zmax` (수준) = max_f |z_f| / zq_f — 피처마다 |z| 를 그 묶음 학습 구간의 99.5% 값(zq, 최소 3)으로 나눠 최댓값.
   그냥 최대 |z| 를 쓰면 양자화로 MAD 가 아주 작은 피처(예: P7 다단 레시피 pump_resid, 척도 0.08%)가 평소에도
   |z| 20 을 넘어 임계값이 포화되고, 꼬리가 무거운 피처 하나가 판정을 독차지했다
-- 사이클 경보 `alarm` = score 또는 zmax 가 펌프별 임계값(calib 상위 0.5%)을 넘음. 이유는 train.py 머리말
-- 임계값도 묶음별. 짧은 창(최근 10사이클 중앙값) 판정은 호출하는 쪽이 이력을 들고 `thresholds[묶음]["roll"/"zmax_roll"]` 과 비교
+- 패턴·수준 둘로 나누는 이유는 train.py 머리말
+
+## 판정 — 두 단계 (2026-10-08)
+
+| 등급 | 임계값 (묶음별, 정상 점수 분위) | 쓰임 |
+|---|---|---|
+| **주의** (`warn`) | 0.995 — 정상의 상위 0.5% | 대시보드·기록. 작은 드리프트는 ③ 추세에서 다시 본다 |
+| **알림** (`alert`) | 0.999 — 정상의 상위 0.1% | 사람에게 알림 |
+
+- 사이클 등급 `level` (정상/주의/알림): 그 사이클의 score 또는 zmax 가 등급 임계값을 넘음. `alarm` = 주의 이상, `alert` = 알림
+- 창 등급 (`WindowTracker`): 같은 묶음 최근 10사이클의 score·zmax 중앙값을 창 임계값과 비교. 펌프 등급 = 그 펌프 묶음들 중 가장 높은 창 등급
+- **사람에게 가는 알림 = 펌프 등급이 "알림" 으로 새로 올라간 순간 한 번** (`notify`). 이어지는 동안은 다시 울리지 않는다
+- 알림을 보낸 펌프는 `COOLDOWN_MIN`(60분) 동안 다시 알리지 않는다 — 경계에서 오르내리며 한 시간에 네 번 울리던 것(P7 9/16 밤)
+- 알림 이유 `reason` = 그 펌프 최근 10사이클 중 주의 이상이었던 사이클들의 이유 최빈값 (사이클 하나의 이유는 흔들린다)
+- 펌프가 `RESET_GAP_MIN`(30분) 넘게 사이클이 없으면(정지·야간) 그 펌프의 창 상태를 비운다 — 아침 재가동 때의 이상을 새 알림으로
+  (안 비우면 9/16 밤의 알림 상태가 이어져 9/17 아침 유량계 고장이 새 알림을 못 냈다)
+- 정상 날 펌프당 하루 알림 약 0.6회(14대 약 8회), 주의는 약 2.7회 (cycle_ae_test.ipynb §8)
+- 임계값 구조: `meta["thresholds"][묶음] = {"warn": {cycle, zmax, roll, zmax_roll}, "alert": {...}}`
 """
 
 import json
 import os
+from collections import deque
 
 import numpy as np
 import pandas as pd
@@ -40,6 +60,10 @@ FEATURE_KO = {"pump_resid": "펌프 잔차", "r_phys": "압력/기대", "t_self"
 CONDS = ["mu_rel_z", "hz_rel", "dhz_rel", "is_iso", "is_shot", "is_multi"]
 CLIP = 20.0
 MIN_FIT = 300            # 묶음별 최소 학습 사이클
+TIERS = ("warn", "alert")
+LEVELS = ("정상", "주의", "알림")               # 0, 1, 2
+RESET_GAP_MIN = 30
+COOLDOWN_MIN = 60
 ZQ = 0.995               # 수준 판정: 피처별 정상 |z| 한계 (학습 구간 분위)
 
 
@@ -166,6 +190,88 @@ def explain(X, Z, E, by_ae):
 
 
 # --------------------------------------------------------------------------- #
+# 등급
+# --------------------------------------------------------------------------- #
+def add_levels(df, thr):
+    """사이클 등급. alarm_ae / alarm_z / alarm = 주의 이상, alert = 알림, level = 정상/주의/알림."""
+    tm = lambda t, c: df.group.map({k: v[t][c] for k, v in thr.items()})  # noqa: E731
+    df["alarm_ae"] = df.score > tm("warn", "cycle")
+    df["alarm_z"] = df.zmax > tm("warn", "zmax")
+    df["alarm"] = df.alarm_ae | df.alarm_z
+    df["alert"] = (df.score > tm("alert", "cycle")) | (df.zmax > tm("alert", "zmax"))
+    df["level"] = np.where(df.alert, LEVELS[2], np.where(df.alarm, LEVELS[1], LEVELS[0]))
+    return df
+
+
+class WindowTracker:
+    """짧은 창 판정 — 실시간·배치 공용. 묶음별 최근 `roll` 사이클의 점수 중앙값으로 창 등급,
+    펌프 등급 = 그 펌프 묶음들의 현재 창 등급 중 최고. 펌프 등급이 알림으로 새로 올라가면 notify=True (한 번만)."""
+
+    def __init__(self, meta, reset_gap_min=RESET_GAP_MIN, cooldown_min=COOLDOWN_MIN):
+        self.thr, self.roll = meta["thresholds"], meta["roll"]
+        self.gap = pd.Timedelta(minutes=reset_gap_min)
+        self.cool = pd.Timedelta(minutes=cooldown_min)
+        self.hist, self.glevel, self.plevel, self.last_t, self.last_notify, self.reasons = {}, {}, {}, {}, {}, {}
+
+    def _reset(self, pump):
+        for g in [g for g in self.hist if g.startswith(pump + "|")]:
+            del self.hist[g]
+            self.glevel.pop(g, None)
+        self.plevel[pump] = 0
+        self.last_notify.pop(pump, None)
+        self.reasons.pop(pump, None)
+
+    def update(self, pump, group, score, zmax, t=None, reason=None, level=None):
+        """reason·level: 이 사이클의 경보 이유와 사이클 등급 (score() 출력의 top_feature/top_dir, level) — 알림 이유 집계용."""
+        if t is not None:
+            t = pd.Timestamp(t)
+            if pump in self.last_t and t - self.last_t[pump] > self.gap:
+                self._reset(pump)
+            self.last_t[pump] = t
+        if group not in self.thr or not np.isfinite(score):
+            return {"window_level": None, "pump_level": LEVELS[self.plevel.get(pump, 0)], "notify": False,
+                    "score_med": np.nan, "zmax_med": np.nan, "reason": None}
+        rq = self.reasons.setdefault(pump, deque(maxlen=self.roll))
+        rq.append(reason if level in LEVELS[1:] else None)
+        h = self.hist.setdefault(group, (deque(maxlen=self.roll), deque(maxlen=self.roll)))
+        h[0].append(score)
+        h[1].append(zmax)
+        lv, ms, mz = 0, np.nan, np.nan
+        if len(h[0]) == self.roll:
+            ms, mz = float(np.median(h[0])), float(np.median(h[1]))
+            th = self.thr[group]
+            for i, tier in ((2, "alert"), (1, "warn")):
+                if ms > th[tier]["roll"] or mz > th[tier]["zmax_roll"]:
+                    lv = i
+                    break
+        self.glevel[group] = lv
+        prev = self.plevel.get(pump, 0)
+        cur = max(v for g, v in self.glevel.items() if g.startswith(pump + "|"))
+        self.plevel[pump] = cur
+        notify = cur == 2 and prev < 2
+        if notify and t is not None:
+            if pump in self.last_notify and t - self.last_notify[pump] < self.cool:
+                notify = False
+            else:
+                self.last_notify[pump] = t
+        rs = [r for r in rq if r]
+        return {"window_level": LEVELS[lv], "pump_level": LEVELS[cur], "notify": notify,
+                "score_med": ms, "zmax_med": mz, "reason": max(set(rs), key=rs.count) if rs else None}
+
+
+def window_levels(df, meta):
+    """배치 — df 를 시간순으로 WindowTracker 에 흘린다 (실시간과 같은 결과). 컬럼 window_level, pump_level, notify 추가."""
+    df = df.sort_values("t_start")
+    wt = WindowTracker(meta)
+    why = (df.top_feature + " " + df.top_dir) if "top_feature" in df else pd.Series(None, index=df.index)
+    lv = df.level if "level" in df else pd.Series(None, index=df.index)
+    out = [wt.update(p, g, s, z, t, r, l) for p, g, s, z, t, r, l in
+           zip(df.pump, df.group, df.score, df.zmax, df.t_start, why, lv)]
+    o = pd.DataFrame(out, index=df.index)
+    return df.join(o[["window_level", "pump_level", "notify", "score_med", "zmax_med", "reason"]].rename(columns={"reason": "notify_reason"}))
+
+
+# --------------------------------------------------------------------------- #
 # 채점기 (학습 결과 읽어서 쓰기)
 # --------------------------------------------------------------------------- #
 class CycleScorer:
@@ -191,9 +297,7 @@ class CycleScorer:
         df["score"] = score_from_errors(E)
         Z = zlevel(df, self.stats)
         df["zmax"] = zmax_of(Z)
-        df["alarm_ae"] = df.score > df.group.map({k: v["cycle"] for k, v in self.thr.items()})
-        df["alarm_z"] = df.zmax > df.group.map({k: v["zmax"] for k, v in self.thr.items()})
-        df["alarm"] = df.alarm_ae | df.alarm_z
+        df = add_levels(df, self.thr)
         df["top_feature"], df["top_dir"] = explain(X, Z, E, df.alarm_ae.to_numpy())
         for j, f in enumerate(FEATURES):
             df[f"err_{f}"] = E[:, j]
