@@ -35,6 +35,10 @@
 - 창 등급 (`WindowTracker`): 같은 묶음 최근 10사이클의 score·zmax 중앙값을 창 임계값과 비교. 펌프 등급 = 그 펌프 묶음들 중 가장 높은 창 등급
 - **사람에게 가는 알림 = 펌프 등급이 "알림" 으로 새로 올라간 순간 한 번** (`notify`). 이어지는 동안은 다시 울리지 않는다
 - 알림을 보낸 펌프는 `COOLDOWN_MIN`(60분) 동안 다시 알리지 않는다 — 경계에서 오르내리며 한 시간에 네 번 울리던 것(P7 9/16 밤)
+- **펌프마다 운영일(06시 경계)에 한 번만** 알린다 — 재가동 리셋은 창만 비우고 이 기억은 남긴다.
+  (안 남기면 이미 아는 이상이 쉬는 시간 뒤 재가동마다 다시 울렸다: P2 하루 4~7회, 10/8~10.
+  이유별로 한 번씩으로 하면, 지속 상태에선 이유가 "시작 전 압력 높음 / 압력/기대 높음 / 압력 해제 반감 높음" 으로
+  바뀌며 다시 울렸다.) 그날 다른 문제가 생겨도 화면의 펌프 등급은 계속 보이므로, 알림(푸시)은 하루 한 번으로 둔다
 - 알림 이유 `reason` = 그 펌프 최근 10사이클 중 주의 이상이었던 사이클들의 이유 최빈값 (사이클 하나의 이유는 흔들린다).
   그런 사이클이 없으면(창 중앙값만 임계를 넘은 경우) 창 전체 사이클의 이유 최빈값 — 예전엔 이 경우 이유가 비었다
 - 펌프가 `RESET_GAP_MIN`(30분) 넘게 사이클이 없으면(정지·야간) 그 펌프의 창 상태를 비운다 — 아침 재가동 때의 이상을 새 알림으로
@@ -65,6 +69,7 @@ TIERS = ("warn", "alert")
 LEVELS = ("정상", "주의", "알림")               # 0, 1, 2
 RESET_GAP_MIN = 30
 COOLDOWN_MIN = 60
+DAY_START_HOUR = 6       # 운영일 경계 (탱크 모델과 같은 06시) — 펌프마다 알림은 운영일에 한 번
 ZQ = 0.995               # 수준 판정: 피처별 정상 |z| 한계 (학습 구간 분위)
 
 
@@ -213,14 +218,19 @@ class WindowTracker:
         self.gap = pd.Timedelta(minutes=reset_gap_min)
         self.cool = pd.Timedelta(minutes=cooldown_min)
         self.hist, self.glevel, self.plevel, self.last_t, self.last_notify, self.reasons = {}, {}, {}, {}, {}, {}
+        self.notified = {}       # pump -> 이미 알린 운영일
 
     def _reset(self, pump):
+        """재가동 — 창과 등급만 비운다. 알림 기억(60분 대기, 운영일 이유)은 남긴다."""
         for g in [g for g in self.hist if g.startswith(pump + "|")]:
             del self.hist[g]
             self.glevel.pop(g, None)
         self.plevel[pump] = 0
-        self.last_notify.pop(pump, None)
         self.reasons.pop(pump, None)
+
+    @staticmethod
+    def op_day(t):
+        return (t - pd.Timedelta(hours=DAY_START_HOUR)).date()
 
     def update(self, pump, group, score, zmax, t=None, reason=None, level=None):
         """reason·level: 이 사이클의 경보 이유와 사이클 등급 (score() 출력의 top_feature/top_dir, level) — 알림 이유 집계용."""
@@ -249,16 +259,19 @@ class WindowTracker:
         prev = self.plevel.get(pump, 0)
         cur = max(v for g, v in self.glevel.items() if g.startswith(pump + "|"))
         self.plevel[pump] = cur
+        # 이유: 창 안의 주의 이상 사이클들 이유 최빈값. 그런 사이클이 없으면(창 중앙값만 넘은 경우) 창 전체 사이클의 최빈값
+        rs = [r for r, ab in rq if r and ab] or [r for r, _ in rq if r]
+        why = max(set(rs), key=rs.count) if rs else None
         notify = cur == 2 and prev < 2
         if notify and t is not None:
-            if pump in self.last_notify and t - self.last_notify[pump] < self.cool:
+            od = self.op_day(t)
+            if (pump in self.last_notify and t - self.last_notify[pump] < self.cool) or self.notified.get(pump) == od:
                 notify = False
             else:
                 self.last_notify[pump] = t
-        # 이유: 창 안의 주의 이상 사이클들 이유 최빈값. 그런 사이클이 없으면(창 중앙값만 넘은 경우) 창 전체 사이클의 최빈값
-        rs = [r for r, ab in rq if r and ab] or [r for r, _ in rq if r]
+                self.notified[pump] = od
         return {"window_level": LEVELS[lv], "pump_level": LEVELS[cur], "notify": notify,
-                "score_med": ms, "zmax_med": mz, "reason": max(set(rs), key=rs.count) if rs else None}
+                "score_med": ms, "zmax_med": mz, "reason": why}
 
 
 def window_levels(df, meta):

@@ -26,6 +26,10 @@ md(r'''
 - 10/11(일): 자동운전 없음, 펌프 순환도 멈춤. 11시 무렵 잠깐 켠 기록만 — 점검으로 보인다
 
 **볼 것**: ① 그날 펌프들이 어떤 상태였나 ② 펌프별 등급·알림 ③ 피처별로 평소와 얼마나 달랐나 ④ 10/11 점검을 모델이 어떻게 봤나 ⑤ 화면에 어떻게 표시할까
+
+**임계값** — §2~§5 는 처음 돌렸을 때의 **예전 임계값**(calib 건강일 분위)으로 본다. 여기서 "정상 펌프도 알림이 많다" 를 찾았고,
+그 뒤 임계값을 **날짜 단위**로 다시 잡고(`calibrate.py`, 신경망은 그대로) 같은 펌프·같은 이유 알림을 **운영일에 한 번**으로 바꿨다.
+바뀐 결과는 **§8**.
 ''')
 
 md(r'''
@@ -76,7 +80,9 @@ def style_ax(ax, grid="y"):
 S = load_settings()
 ART = os.path.join(ROOT_DIR, "HDI_MODEL", "cycle_ae", "artifacts")
 sc = cae.CycleScorer.load(ART)
-meta = sc.meta
+NEWMETA = sc.meta                                                         # 지금 임계값 (날짜 단위, calibrate.py)
+meta = {**NEWMETA, "thresholds": NEWMETA.get("thresholds_prev", NEWMETA["thresholds"])}   # §2~§5 는 예전 임계값
+sc_old = cae.CycleScorer(sc.model, meta)
 DAYS = ("2026-10-08", "2026-10-11")
 NEW = pd.Timestamp("2026-10-09")
 print("모델 학습:", meta["created"], "| 데이터셋 test_start:", meta["dataset"]["test_start"])
@@ -168,7 +174,7 @@ for p in ORDER:
     if cy.empty:
         continue
     cy = add_baseline_features(cy[cy.FT > 0], bs)
-    parts.append(sc.score(cy.assign(pump=p, material=bs.material)))
+    parts.append(sc_old.score(cy.assign(pump=p, material=bs.material)))
 ALL = pd.concat(parts, ignore_index=True)
 ALL["day"] = ALL.t_start.dt.strftime("%m-%d")
 ALL["manual"] = ALL.flag_stopped & ~ALL.flag_alarm
@@ -209,8 +215,11 @@ DT[DT["알림 횟수"] > 0].sort_values(["날", "펌프"])[["날", "펌프", "�
 md(r'''
 **읽기**
 
-- 알림이 몰린 펌프는 넷 — **P2·I2**(같은 헤드 HD1-2), **I6**, **I7**. 넷 다 "새 이상" 이 아니라 **이미 알던 상태가 이어진 것**이다 (§4)
-- 나머지 10대도 정상 날 기대(펌프당 하루 0~1회)보다 알림이 많다 — §5 에서 원인을 본다
+- 주의·알림 **비율**이 몰린 펌프는 넷 — **P2·I2**(같은 헤드 HD1-2), **I6**, **I7** (+ 10/8 의 I1). 넷 다 "새 이상" 이 아니라
+  **이미 알던 상태가 이어진 것**이다 (§4)
+- 알림 **횟수**는 펌프마다 하루 최대 1번 — 운영일 알림 기억(§8) 때문. 처음 돌렸을 땐 이 기억이 없어 P2 가 쉬는 시간 뒤
+  재가동마다 다시 울려 하루 4~7번이었다
+- 나머지 10대도 거의 날마다 한 번씩 울린다 — 학습 때 기대(펌프당 하루 0.34회)보다 많다. §5 에서 원인을 본다
 ''')
 
 md(r'''
@@ -338,6 +347,7 @@ print(f"정상 펌프 10대 × 3일 알림 {int(nd.notify.sum())}건 = 펌프당
 
 # ① 점수 분포가 학습 때보다 올라갔나
 SC = pd.read_pickle(os.path.join(ROOT_DIR, "cache", "pump_dataset", "scores.pkl.xz"), compression="xz")
+SC = cae.add_levels(SC.drop(columns=["alarm_ae", "alarm_z", "alarm", "alert", "level"]), meta["thresholds"])   # 예전 임계값으로
 cal = SC[(SC.role == "calib") & SC.in_scope & ~SC.pump.isin(KNOWN)]
 cmp = pd.DataFrame({"calib (학습 때 건강일)": [(cal.level != "정상").mean() * 100, (cal.level == "알림").mean() * 100, cal.score.median()],
                     "10/8~10 (새 날)": [(nd.level != "정상").mean() * 100, (nd.level == "알림").mean() * 100, nd.score.median()]},
@@ -406,8 +416,8 @@ md(r'''
 - **× 1.25** 면 정상 펌프 새 날 알림이 기대 수준(펌프당 하루 0.3~0.4회)으로 내려오고, 알려진 이벤트는 **첫 알림 시각까지 그대로** 잡는다
   (I7 드리프트 재발만 30분쯤 늦다. I1 저항 증가는 그 구간 전에 이미 알림 상태라 새 알림 없이 91% 알림 유지)
 - × 1.5 부터는 P2 배관 저항 +7% 같은 작은 변화의 창 알림 비율이 떨어지기 시작한다
-- **제안: 창 알림 임계 × 1.25** — `train.py` 에 `WINDOW_ALERT_MARGIN = 1.25` 로 넣고 다시 돌린다 (아직 반영 안 함)
-- 근본적으로는 **데이터가 쌓이면 임계값을 다시 잡는 것** — 4주로 정한 임계값은 날마다 조금씩 달라지는 정상 변동을 다 담지 못한다
+- 배수를 곱하는 건 임시방편이라, 대신 **임계값을 날짜 단위로 다시 잡았다** — 정상 날 하루하루의 분위값 중앙값 + 4·MAD
+  (`calibrate.py`). 날마다 흔들리는 폭이 임계값에 들어가고, 배수 없이 비슷한 효과를 낸다 → §8
 ''')
 
 md(r'''
@@ -479,12 +489,65 @@ md(r'''
 
 | 상황 | 지금 | 제안 |
 |---|---|---|
-| **알던 이상이 계속됨** (P2·I2 10/6~, I7 드리프트, I6) | 쉬는 시간마다 재가동 → 다시 알림 (P2 하루 4~7회) | 화면엔 **"지속 이상"** 으로 계속 표시, 알림은 **처음 한 번 + 담당자 확인(인지) 뒤 멈춤**. 정비로 해결되면 확인 해제. 정비 없이 "새 정상" 이면 기준선 재학습 |
+| **알던 이상이 계속됨** (P2·I2 10/6~, I7 드리프트, I6) | 처음엔 쉬는 시간마다 다시 알림(P2 하루 4~7회) → **운영일에 한 번으로 바꿈**(§8) | 화면엔 **"지속 이상"** 으로 계속 표시, **담당자가 확인(인지)하면 다음 날부터도 멈춤**. 정비로 해결되면 확인 해제. 정비 없이 "새 정상" 이면 기준선 재학습 |
 | **같은 헤드의 POL·ISO 가 같은 이유로 같이 알림** (P2·I2: 둘 다 압력/기대·시작 전 압력 높음) | 펌프 2개 따로 알림 | **헤드 1개 알림**으로 묶기 — "HD1-2 토출 저항 증가 (POL·ISO 동시)". 원인이 펌프가 아니라 헤드·노즐 쪽이라는 정보 자체가 진단이다 |
-| 정상 펌프 경계선 알림 | 펌프당 하루 약 1.4회 | 창 알림 임계 × 1.25 (§5-1) |
+| 정상 펌프 경계선 알림 | 펌프당 하루 1.4회 | **날짜 단위 임계값으로 바꿈** → 0.37회 (§8) |
 | 수동·점검 사출 (10/11) | 플래그 사이클이라 판정 제외 | "점검·수동" 상태로 표시, 점수는 참고값, 알림 없음 |
 - 점검 사이클의 점수는 **정비 기록과 같이 남기면** 나중에 "정비 전후 펌프 잔차가 얼마나 바뀌었나" 를 보는 재료가 된다
 - 백엔드 `PumpMonitor` 의 반환 형태로는: 정지·대기·점검·범위 밖 → `None`(판정 없음) 에 `state` 필드를 붙여 구분, 자동 운전 → 판정 dict
+''')
+
+md(r'''
+---
+## §8. 적용 후 — 날짜 단위 임계값 + 운영일 알림 기억
+
+바꾼 것 두 가지 (신경망 `model.pt` 는 그대로):
+
+1. **임계값** (`calibrate.py`): 묶음마다 정상 날(학습 기간 건강일) **하루하루의** 분위값을 구해 `중앙값 + 4 × MAD`.
+   예전엔 calib 건강일(묶음당 1~3일) 분위값 하나라, 학습 뒤 조금 달라진 날에 경계선 알림이 많았다
+2. **알림 기억** (`WindowTracker`): 같은 펌프·같은 이유는 **운영일(06시 경계)에 한 번**. 재가동 리셋은 창만 비운다
+
+같은 사이클을 지금 임계값으로 다시 채점한다.
+''')
+code(r'''
+ALLn = sc.score(ALL.drop(columns=[c for c in ALL.columns if c.startswith("err_")] +
+                         ["score", "zmax", "alarm_ae", "alarm_z", "alarm", "alert", "level", "top_feature", "top_dir", "in_scope"]))
+ALLn["day"] = ALLn.t_start.dt.strftime("%m-%d")
+OPSn = cae.window_levels(ALLn[~ALLn.flag_any & ALLn.in_scope].copy(), NEWMETA)
+KNOWN = ["P2", "I2", "I6", "I7"]
+rows = []
+for name, o in [("예전 임계값", OPS), ("지금 (날짜 단위 + 운영일 기억)", OPSn)]:
+    o = o[o.day.isin(["10-08", "10-09", "10-10"])]
+    for grp, m in [("정상 10대", ~o.pump.isin(KNOWN)), ("지속 상태 4대 (P2·I2·I6·I7)", o.pump.isin(KNOWN))]:
+        g = o[m]
+        rows.append({"임계값": name, "펌프": grp, "사이클 주의%": round((g.level != "정상").mean() * 100, 2),
+                     "사이클 알림%": round((g.level == "알림").mean() * 100, 2),
+                     "사람에게 알림/펌프·일": round(g.notify.sum() / g.groupby(["pump", "day"]).ngroups, 2)})
+pd.DataFrame(rows).set_index(["임계값", "펌프"])
+''')
+code(r'''
+DTn = day_table(OPSn)
+print("지금 임계값으로 사람에게 간 알림 — 10/8~10/11")
+DTn[DTn["알림 횟수"] > 0].sort_values(["날", "펌프"])[["날", "펌프", "사이클", "주의%", "알림%", "알림 횟수", "알림 이유"]].reset_index(drop=True)
+''')
+code(r'''
+# 알려진 이벤트 — calibrate.py 가 저장한 평가 (학습 기간 하루 빼고 검증 포함)
+pd.Series(NEWMETA.get("threshold_method", {}).get("eval", {"(평가 없음)": "calibrate.py 를 돌리면 채워진다"}), name="지금 임계값").to_frame()
+''')
+md(r'''
+**읽기**
+
+| | 처음 (예전 임계값, 알림 기억 없음) | 예전 임계값 + 운영일 기억 | **지금 (날짜 단위 + 운영일 기억)** |
+|---|---|---|---|
+| 새 날 정상 펌프 10대 — 알림/펌프·일 | 1.43 | 0.70 | **0.37** (학습 때 기대 0.34) |
+| 새 날 정상 펌프 — 사이클 알림 % | 2.21 | 2.21 | **1.68** |
+| 지속 상태 4대 — 알림/펌프·일 | 1.5~2 (P2 하루 4~7) | 0.83 | **0.92** — 하루 한 번, 화면엔 계속 |
+| 학습 기간 하루 빼고 검증 — 알림/펌프·일 | 0.35 | — | **0.15** |
+| 알려진 이벤트 첫 알림 | | | **그대로** (P7 전조 22:25 → 22:27 만 2분 늦음) |
+
+- 남은 정상 펌프 알림(위 표의 10/10 밤 P1·P4·P7·I3 등)은 하루 1칸 안팎의 작은 치우침 — 학습 뒤 실제로 조금 움직인 것이다.
+  데이터가 쌓여 임계값을 다시 잡으면(`calibrate.py`, 몇십 초) 이 부분이 더 줄어든다
+- 지속 상태 펌프는 이제 하루 한 번 알리고, 화면에는 등급이 계속 남는다 — "확인(인지)" 기능이 붙으면 다음 날부터도 멈출 수 있다
 ''')
 
 nb = {"cells": [], "metadata": {"kernelspec": {"display_name": "venv (3.13.7)", "language": "python", "name": "python3"},

@@ -9,13 +9,13 @@
    (펌프마다 같은 비중으로 뽑는다)
    조기 종료는 `calib` 손실로
 2. 묶음별 임계값 — 두 가지 판정을 같이 쓴다 (2026-10-08 실험)
-   - **AE 점수** (패턴): 피처 사이 관계가 평소와 다름. calib 점수 분위 (`THR_Q` — 주의 0.995, 알림 0.999)
-   - **수준** (`zmax` = max 피처별 |z|/zq, model.py): 한 피처가 평소 범위를 벗어남. calib 상위 0.5%
+   - **AE 점수** (패턴): 피처 사이 관계가 평소와 다름
+   - **수준** (`zmax` = max 피처별 |z|/zq, model.py): 한 피처가 평소 범위를 벗어남
    AE 는 평소에도 같이 움직이는 방향(예: 배관 저항↑ → P0·r_phys 함께↑)의 이동은 잘 복원해서 못 본다
    (I1 저항 증가: AE 24% / |z| 88%). 반대로 관계가 어긋난 이상은 AE 만 본다 (I7: AE 72% / |z| 10%).
-   최종 사이클 경보 = 둘 중 하나. 10사이클 이동 중앙값(짧은 창) 임계값은 fit+calib 의 상위 0.5% —
-   calib 만 쓰면 날짜가 1~3일뿐이라 날마다 다른 정상 변동을 못 담아 학습 구간에서도 9% 가 울렸다.
-   calib 사이클이 MIN_CALIB 미만인 묶음은 사이클 임계값도 fit+calib 로 잡는다
+   최종 사이클 경보 = 둘 중 하나.
+   임계값 숫자는 `calibrate.compute_thresholds` — 정상 날 하루하루의 분위값(주의 0.995 / 알림 0.999)의 중앙값 + K·MAD.
+   신경망 없이 임계값만 다시 잡을 땐 `python HDI_MODEL/cycle_ae/calibrate.py` (calibrate.py 머리말에 이유와 비교표)
 3. 평가 — 구간별 경보율, 이벤트 검출률
 
 ## 출력
@@ -36,15 +36,15 @@ import torch
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+from calibrate import K as THR_K, compute_thresholds  # noqa: E402
 from dataset import EVAL_EVENTS, OUT_DIR, OUT_PATH  # noqa: E402
 from model import (ARTIFACT_DIR, CONDS, FEATURES, MIN_FIT, ZQ, CycleAE, CycleScorer, add_levels, errors,  # noqa: E402
                    explain, fit_stats, prepare, score_from_errors, window_levels, zlevel, zmax_of)
 
 CONFIG = {"latent": 4, "hidden": [32, 16], "lr": 1e-3, "batch": 512, "epochs": 60, "patience": 6,
           "weight_decay": 1e-5, "seed": 0}
-THR_Q = {"warn": 0.995, "alert": 0.999}   # 두 단계: 주의 = 정상 상위 0.5%, 알림 = 상위 0.1% (model.py 머리말)
+# 임계값 분위·방법은 calibrate.py (Q = 주의 0.995 / 알림 0.999, 날짜 단위 중앙값 + K·MAD)
 ROLL = 10                # 짧은 창: 같은 묶음 최근 10사이클 점수 중앙값
-MIN_CALIB = 100          # 이보다 적으면 사이클 임계값을 fit+calib 로
 
 
 def train_model(X, M, C, w, Xv, Mv, Cv, cfg):
@@ -111,16 +111,8 @@ def main():
     df["score_roll"] = rolling_med(df, "score")
     df["zmax_roll"] = rolling_med(df, "zmax")
 
-    # 임계값 — 사이클은 calib (적으면 fit+calib), 짧은 창은 fit+calib. 두 단계
-    normal = df[df.role.isin(["fit", "calib"]) & df.in_scope]
-    thr = {}
-    for k, n in normal.groupby("group"):
-        g = n[n.role == "calib"]
-        src = g if len(g) >= MIN_CALIB else n
-        thr[k] = {t: {"cycle": float(src.score.quantile(q)), "zmax": float(src.zmax.quantile(q)),
-                      "roll": float(n.score_roll.dropna().quantile(q)), "zmax_roll": float(n.zmax_roll.dropna().quantile(q))}
-                  for t, q in THR_Q.items()}
-        thr[k].update({"n_calib": int(len(g)), "cycle_thr_from": "calib" if len(g) >= MIN_CALIB else "fit+calib"})
+    # 임계값 — 날짜 단위 (calibrate.py). 신경망 없이 임계값만 다시 잡을 땐 calibrate.py 를 따로 돌린다
+    thr = compute_thresholds(df, list(stats))
     df = add_levels(df, thr)
     df["top_feature"], df["top_dir"] = explain(Xa, Za, E, df.alarm_ae.to_numpy())
     meta_thr = {"thresholds": thr, "roll": ROLL}
@@ -168,7 +160,9 @@ def main():
     torch.save(model.state_dict(), os.path.join(ARTIFACT_DIR, "model.pt"))
     ds_meta = json.load(open(os.path.join(OUT_DIR, "cycles_meta.json"), encoding="utf-8"))
     meta = {"created": pd.Timestamp.now().isoformat(timespec="seconds"), "features": FEATURES, "conds": CONDS,
-            "config": CONFIG, "thr_q": THR_Q, "roll": ROLL, "min_fit": MIN_FIT, "min_calib": MIN_CALIB, "zq": ZQ, "stats": stats, "thresholds": thr, "history": hist,
+            "config": CONFIG, "thr_k": THR_K,
+            "threshold_method": {"created": pd.Timestamp.now().isoformat(timespec="seconds"), "k": THR_K, "by": "train.py",
+                                 "note": "평가(하루 빼고·새 날)는 calibrate.py 를 돌리면 채워진다"}, "roll": ROLL, "min_fit": MIN_FIT, "zq": ZQ, "stats": stats, "thresholds": thr, "history": hist,
             "dataset": ds_meta, "n_fit": int(len(fit)), "n_calib": int(len(cal))}
     with open(os.path.join(ARTIFACT_DIR, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
