@@ -31,14 +31,17 @@ PR = 펌프 잔차, RP = 압력/기대, P0 = 시작 전 압력, CV = 유량 흔�
 I1 노즐 저항 감소 RP −4.7 · P0 −1.4 / 증가 RP +3.8 · P0 +1.6, P2 배관 저항 RP +0.8 · P0 +1.1 (같은 때 I2 RP +0.8 · P0 +0.4),
 I7 드리프트 RP −2.4 · P0 −0.8, 10/10 밤 P1·P4·I3 동시 PR +0.6~+1.1 — `diagnose_rules.md` 의 검증 표.
 
-## 출력 — 릴레이 경보 형식 (HDI_Relay backend tools_yeji/Relay_Monitor 가 받는 것)
+## 출력 — 경보 목록 (HDI_Relay backend tools_yeji/Pump_Monitor 가 받는 것)
 
-    {"relay", "reason", "priority", "type", "message", "show"}  + 참고 필드 {"pump", "head", "part", "level", "evidence", "relay_fallback"}
+    {"reason", "priority", "type", "message", "show", "pumps", "part"}  + 참고 필드 {"pump", "head", "level", "evidence", "label",
+                                                                          "relay", "relay_fallback"}
 
-- `show=True` 는 운영일 첫 알림 순간에만. 알림 등급이 이어지는 동안은 `show=False` 로 계속 낸다 → Relay_Monitor 가
-  근무 끝까지 유지한다 (탱크·헤드와 같은 규칙)
-- `relay`: 부품의 topology 릴레이 주소. **유량계·펌프 본체는 topology 에 릴레이가 없어** 그 펌프의 토출 압력(PT) 릴레이로
-  대신 띄우고 `relay_fallback=True`, `part` 에 원래 부품을 남긴다 → topology 에 `Scale_Out___FT_*` 등을 추가하면 자동으로 옮겨 간다
+- 백엔드에서는 `Pump_Monitor` 가 받아 펌프별로 근무 끝까지 유지하고 `Pump_Score` → `Pump_Anomaly`(3D 펌프 마커)로 띄운다
+  (탱크·헤드 `Relay_Monitor` 와 같은 유지 규칙)
+- `show=True` 는 운영일 첫 알림 순간에만. 알림 등급이 이어지는 동안은 `show=False` 로 계속 낸다 → 띄운 것만 유지 연장
+- `pumps`: 이 경보를 띄울 펌프. 헤드 판정은 POL·ISO 두 대
+- `relay`: 부품의 topology 릴레이 주소 — 지금은 쓰지 않는다 (나중에 헤드 판정을 헤드 SOL 마커에도 띄울 때 쓸 자리).
+  유량계·펌프 본체는 topology 에 릴레이가 없어 PT 릴레이로 대신 채우고 `relay_fallback=True`
 - `type`: 프론트 아이콘 키 (warning-icons.ts — pressure / level / thermal / vibration / trip). `flow`·`pump` 는 아직 아이콘이
   없어 삼각 경고로 뜬다
 """
@@ -212,7 +215,7 @@ class PumpDiagnoser:
                 pol, iso = (pump, partner) if pump.startswith("P") else (partner, pump)
                 out.append(self._alert(hcode, relay, fb, pol, head, show=st["show_pending"] or ps["show_pending"],
                                        ev={pump: ev.get(code), partner: ps["ev"].get(code)},
-                                       label=f"{head[0]}-{head[1]} {pol}·{iso}"))
+                                       label=f"{head[0]}-{head[1]} {pol}·{iso}", pumps=[pol, iso]))
                 st["show_pending"] = ps["show_pending"] = False
                 done.update({pump, partner})
                 continue
@@ -225,12 +228,12 @@ class PumpDiagnoser:
             done.add(pump)
         return out
 
-    def _alert(self, code, relay, fallback, pump, head, show, ev, label=None, common=0):
+    def _alert(self, code, relay, fallback, pump, head, show, ev, label=None, common=0, pumps=None):
         r = RULES[code]
         msg = r["message"] + (COMMON_SUFFIX.format(n=common - 1) if common else "")
         return {"relay": relay, "reason": f"pump_{code}", "priority": r["priority"], "type": r["type"],
                 "message": msg, "show": bool(show),
-                "pump": pump, "head": f"{head[0]}/{head[1]}", "part": r["part"], "level": "알림",
+                "pump": pump, "pumps": pumps or [pump], "head": f"{head[0]}/{head[1]}", "part": r["part"], "level": "알림",
                 "evidence": ev, "relay_fallback": fallback, "label": label or self.name.get(pump, pump)}
 
 
@@ -247,11 +250,11 @@ def md_table(df):
 
 
 def write_table(path):
-    rows = ["| 코드 (`reason` = `pump_` + 코드) | 부품 → 릴레이 | 아이콘 `type` | 우선순위 | 조건 | 문구 |", "|---|---|---|---|---|---|"]
-    part_relay = {"pressure": "토출 압력 PT (`Scale_Out___PT_{펌프}`)",
-                  "flowmeter": "유량계 — topology 에 없음 → PT 릴레이로 대신",
-                  "pump": "펌프 본체·모터 — topology 에 없음 → PT 릴레이로 대신",
-                  "head": "헤드 인젝션 SOL (예: HD1/2 → `Head_1-2 Injection SOL`)"}
+    rows = ["| 코드 (`reason` = `pump_` + 코드) | 부품 → 화면 | 아이콘 `type` | 우선순위 | 조건 | 문구 |", "|---|---|---|---|---|---|"]
+    part_relay = {"pressure": "토출 배관·노즐 → 그 펌프 마커",
+                  "flowmeter": "유량계 → 그 펌프 마커",
+                  "pump": "펌프 본체·모터 → 그 펌프 마커",
+                  "head": "헤드 → POL·ISO 펌프 마커 둘 다 (나중에 헤드 인젝션 SOL 마커도)"}
     for code, r in sorted(RULES.items(), key=lambda kv: kv[1]["priority"]):
         when = r["when"].replace("|", "\\|")
         rows.append(f"| `{code}` | {part_relay[r['part']]} | `{r['type']}` | {r['priority']} | {when} | {r['message']} |")

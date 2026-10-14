@@ -28,3 +28,6 @@ parkkt/cache/
 *.pkl
 # 데이터 캐시 (원본·피처) — 다시 만들 수 있고 수백 MB 라 올리지 않는다
 cache/
+
+# 이식 묶음 (make_port.py 로 생성)
+HDI_MODEL/relay_port/out/

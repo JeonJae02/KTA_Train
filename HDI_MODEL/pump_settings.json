@@ -1,5 +1,5 @@
 {
- "version": "2026-10-07",
+ "version": "2026-10-11",
  "generated_by": "make_pump_settings.py",
  "topology_version": "2026-08-14T00:00:00.000Z",
  "params": {
@@ -28,7 +28,9 @@
   "K_SCALE": 100000.0,
   "R_EARLY_SEC": 1.6,
   "R_EARLY_TH": 0.7,
-  "FT_TIMEOUT_SEC": 3.0
+  "FT_TIMEOUT_SEC": 3.0,
+  "CADENCE_MED_SEC": 1.0,
+  "GAP_RESET_SEC": 3.0
  },
  "materials": {
   "TM-337": {

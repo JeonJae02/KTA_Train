@@ -30,9 +30,10 @@ alerts = diag.alerts(now)   # [{relay, reason, priority, type, message, show, + 
 ```
 
 - 펌프가 **알림 등급일 때만**, 창 10사이클의 피처 방향으로 유량계 / 펌프 토출 / 배관·노즐 저항 / 헤드 / 응답 / 패턴을 가른다
-- 출력은 HDI_Relay `Relay_Monitor` 가 받는 릴레이 경보 형식 그대로 — `show=True` 는 운영일 첫 알림, 이어지는 동안 `show=False`
-- 같은 헤드 슬롯 POL·ISO 가 같은 방향 저항이면 헤드 인젝션 SOL 릴레이로 하나로 묶는다. 30분 안 3대 이상 같은 판정이면 공통 원인 표시
-- 유량계·펌프 본체는 topology 에 릴레이가 없어 그 펌프의 PT 릴레이로 대신 띄운다(`relay_fallback=True`)
+- 출력은 경보 목록 — 백엔드 `Pump_Monitor` 가 받아 근무 끝까지 유지하고 `Pump_Score` → `Pump_Anomaly`(3D 펌프 마커)로 띄운다.
+  `show=True` 는 운영일 첫 알림, 이어지는 동안 `show=False`
+- 같은 헤드 슬롯 POL·ISO 가 같은 방향 저항이면 헤드 판정 하나로 묶고 두 펌프(`pumps`)에 띄운다. 30분 안 3대 이상 같은 판정이면 공통 원인 표시
+- `relay`(헤드 SOL·PT 릴레이 주소)도 채워 두지만 지금은 안 쓴다 — 헤드 판정을 헤드 SOL 마커에도 띄우는 건 나중에 (`relay_port/PORTING.md`)
 - `python HDI_MODEL/cycle_ae/diagnose.py --validate` — 규칙표 다시 쓰고 알려진 이벤트·새 날 검증 표를 붙인다
 
 ## 실시간 — `HDI_MODEL/Pump_Realtime_Model.py`

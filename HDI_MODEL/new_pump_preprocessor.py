@@ -386,6 +386,12 @@ class PumpProcessor:
         out["alerts"]  # [{"type": "ft_timeout" | "r_early", ...}]
 
     데이터가 사이클 도중부터 시작하면 그 사이클은 버린다 (켜짐 전환을 실제로 본 사이클만).
+
+    수집 간격 가드 (상태기계가 틱 개수로 세므로):
+    - 틱 사이 공백 > GAP_RESET_SEC(3초): 부팅과 같게 — 진행 중 사이클은 flag_cadence 로 마감, 직전 Hz·사출 기록 잊음,
+      다시 꺼짐을 본 뒤 켜지는 사이클부터
+    - 사이클 안 틱 간격 중앙값 > CADENCE_MED_SEC(1초)면 flag_cadence (진단 모드 2초 틱)
+    flag_cadence 사이클은 피처는 내되 판정(창·진단·경보)에서 뺀다 — flag_any 에 포함.
     """
 
     def __init__(self, setup, base=None):
@@ -398,10 +404,13 @@ class PumpProcessor:
         self.prev_ft = None
         self.prev_hz = np.nan
         self.prev_end = None
+        self.last_t = None                 # 직전 틱 시각 (수집 간격)
         self._new_cycle_state()
 
     def _new_cycle_state(self):
         self.on, self.off = [], []
+        self.dts = []                      # 이 사이클 틱 간격 [초]
+        self.gap_cut = False
         self.t0 = self.last_on = None
         self.p0 = np.nan
         self.flag_alarm = self.flag_stopped = False
@@ -422,11 +431,15 @@ class PumpProcessor:
             if v is not None and v == v:          # NaN 은 ffill 대상이라 덮어쓰지 않는다
                 self.last[k] = v
         now = pd.Timestamp(now)
+        dt = (now - self.last_t).total_seconds() if self.last_t is not None else np.nan
+        self.last_t = now
         bu = int(self._get("bu", 0) or 0)
         sv, hz, ft = float(self._get("sv")), float(self._get("hz")), float(self._get("ft"))
         pt = float(self._get("pt"))
         pt = pt - 65536 if pt > 32767 else pt
         tt = float(self._get("tt"))
+        if dt > p.GAP_RESET_SEC:                  # 공백 전 사출 기록은 잊는다 (아래 공백 리셋과 같이)
+            self.inj.extend([False] * self.inj.maxlen)
         self.inj.append(bool(self._get("shot", 0)))
         shot = any(self.inj)
         alarm = any(bool(self.last.get(a, 0)) for a in self.s.alarm_tags)
@@ -434,6 +447,14 @@ class PumpProcessor:
         fresh = self.prev_ft is None or ft != self.prev_ft
         self.prev_ft = ft
         out = {"tick": None, "cycle": None, "alerts": []}
+
+        # 공백(통신 끊김·백엔드 진단 중 예지 미구동) — 그 사이를 모르므로 부팅과 같게 다시 시작한다
+        if dt > p.GAP_RESET_SEC:
+            if self.on:
+                self.gap_cut = True
+                out["cycle"] = self._flush()
+            self._new_cycle_state()
+            self.prev_bu, self.prev_hz = None, np.nan
 
         # 시작 시점의 상태를 모르면 잘린 사이클은 버린다
         if self.prev_bu is None:
@@ -455,6 +476,8 @@ class PumpProcessor:
 
         if bu == 1:
             e = (now - self.t0).total_seconds()
+            if now > self.t0:
+                self.dts.append(dt)
             self.on.append((now, sv, hz, ft, pt, tt, shot))
             self.last_on = now
             self.flag_alarm |= alarm
@@ -467,6 +490,7 @@ class PumpProcessor:
         elif self.on:
             d = (now - self.last_on).total_seconds()
             if d <= p.DECAY_WINDOW_SEC:
+                self.dts.append(dt)
                 self.off.append((now, sv, hz, ft, pt, tt, shot))
                 self.flag_alarm |= alarm
                 self.flag_stopped |= stopped
@@ -539,11 +563,15 @@ class PumpProcessor:
             self.prev_hz = np.nan
             return None
         self.prev_hz = f["Hz"]
+        dts = np.array(self.dts, float)
+        cadence = self.gap_cut or (len(dts) > 0 and (np.median(dts) > self.p.CADENCE_MED_SEC
+                                                      or dts.max() > self.p.GAP_RESET_SEC))
         f.update({"pump": self.s.pump, "t_start": self.t0, "t_end": self.last_on,
                   "t_knee": self.knee.knee_t if self.knee.knee_t is not None else np.nan,
                   "r_early": self.r_early,
-                  "flag_alarm": self.flag_alarm, "flag_stopped": self.flag_stopped,
-                  "flag_any": self.flag_alarm or self.flag_stopped})
+                  "dt_med": float(np.median(dts)) if len(dts) else np.nan,
+                  "flag_alarm": self.flag_alarm, "flag_stopped": self.flag_stopped, "flag_cadence": bool(cadence),
+                  "flag_any": self.flag_alarm or self.flag_stopped or bool(cadence)})
         return add_baseline_features(f, self.base) if self.base is not None else f
 
 

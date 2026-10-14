@@ -1,11 +1,11 @@
-"""펌프 14대 사이클 실시간 진단 — 전처리 → 사이클 AE → 창 판정 → 진단 → 릴레이 경보. 14대 직렬.
+"""펌프 14대 사이클 실시간 진단 — 전처리 → 사이클 AE → 창 판정 → 진단 → 경보. 14대 직렬.
 
 `Tank_Realtime_Model.py` 와 같은 사용법 (반복문 밖에서 객체 생성, 안에서 update 만):
 
     mon = PumpRealtimeGroup()                       # 반복문 밖에서 한 번 (모델·기준선·topology 읽기)
     print(mon.missing_tags(live_data.keys()))        # 처음 한 번 — 빠진 태그 확인
     while True:
-        alerts = mon.update(current_time, live_data) # [{relay, reason, priority, type, message, show, ...}] — Relay_Monitor 형식
+        alerts = mon.update(current_time, live_data) # [{reason, priority, type, message, show, pumps, ...}] — 진단 경보
         scores = mon.pump_scores()                   # {펌프: 판정 dict 또는 None} — 백엔드 Pump_Score 형식 (14개 전량)
 
 값은 **원시 PLC 값** 그대로. 이번 tick 에 안 들어온 태그는 빼거나 None 으로 두면 마지막 값을 이어서 쓴다.
@@ -17,7 +17,7 @@
       └ CycleScorer.score_one (cycle_ae/artifacts)   → 점수, 사이클 등급, 이유, 피처별 편차 zn
       └ WindowTracker.update                         → 펌프 등급, 알림(운영일 1회), 창 편차 중앙값
       └ PumpDiagnoser.update                         → 유량계·토출·배관·헤드 판정
-    PumpDiagnoser.alerts                              → 릴레이 경보 목록 (이 tick 의 반환값)
+    PumpDiagnoser.alerts                              → 경보 목록 (이 tick 의 반환값)
 
 사이클은 펌프마다 10~30초에 하나라 채점은 드물다(14대 합쳐 초당 0.35회, 1회 약 3ms). 나머지 tick 은 상태기계만 돈다.
 
@@ -28,6 +28,7 @@
 | 자동운전 중 (`Auto_Running=1`), 알람 없음, 모델 범위 안 | O | O | 정상 / 주의 / 알림 |
 | 수동·점검 (`Auto_Running=0` 인데 사출) | O (참고값) | **X** — 재가동 첫 사출 등은 평소와 다른 게 당연 (10/11 P1 사례) | 점검·수동 |
 | 알람 사이클 | O (참고값) | X | 알람 |
+| 수집 간격 — 0.5초 틱이 아닌 구간(백엔드 진단 모드 2초 틱, 3초 넘는 공백) | O (참고값) | X | 수집 간격 |
 | 학습 범위 밖 묶음 | X | X | 판정 범위 밖 |
 
 사이클 사이 상태: 순환 Hz 로만 돌면 **대기 순환**, FT 도 없으면 **정지** — "정상" 이 아니라 "판정 없음" 이다.
@@ -54,17 +55,9 @@ row 에서만 tick 을 진행하고, 같이 쓰는 태그(탱크 온도·사출 
 
 ## 백엔드 연결 (HDI_Relay/backend/tools_yeji)
 
-옮길 파일: `new_pump_preprocessor.py`, `pump_settings.json`, `baseline/*.json`, `cycle_ae/{model.py, diagnose.py,
-artifacts/model.pt, artifacts/meta.json}`, 이 파일. (torch 는 백엔드 PumpAutoencoder 가 이미 쓴다)
-
-    # PredictiveHealth.__init__ — 하나만 만들어 두 곳이 같이 쓴다
-    self.pump_rt = PumpRealtimeGroup()
-
-    # Relay_Monitor.check — 탱크·헤드와 같은 목록에 더한다 (근무 단위 유지·relay 합치기는 Relay_Monitor 가 그대로)
-    alerts = self._tank.update(now, live_data) + self._head.update(now, live_data) + self.pump_rt.update(now, live_data)
-
-    # PumpMonitor.check — [MOCK] 자리를 바꾼다 (반환 형식 같음: 14개 전량, 판정 dict 또는 None)
-    return self.pump_rt.pump_scores()
+`relay_port/make_port.py` 가 백엔드 구조로 뽑아 준다 (`relay_port/PORTING.md`). 백엔드에서는 `Pump_Monitor` 가
+이 묶음을 갖고, 매 tick `update` → 경보를 근무 끝까지 유지 → `pump_scores()` 에 붙여 `Pump_Score` 로 낸다.
+PredictiveEngine 이 `over` 인 것만 `Pump_Anomaly` 로 프론트(3D 펌프 마커)에 보낸다. `Relay_Monitor` 는 그대로(탱크·헤드).
 
 확인할 것: 백엔드 live_data 가 들어오는 간격이 로거처럼 약 0.5초인지 — 상태기계의 안정 구간 판정(`STEADY_MIN` 등)이
 틱 개수 기준이라 간격이 많이 다르면 `pump_settings.json` 파라미터를 다시 맞춰야 한다.
@@ -107,8 +100,17 @@ def to_kst_naive(t):
     return t.tz_convert(KST).tz_localize(None) if t.tzinfo is not None else t
 
 
+def _top_features(zn, k=3):
+    """피처별 편차 zn → [{feature, share}] |zn| 큰 순 k 개. share = |zn| / Σ|zn|."""
+    a = {f: abs(float(v)) for f, v in (zn or {}).items() if v is not None and np.isfinite(v)}
+    tot = sum(a.values())
+    if not tot:
+        return []
+    return [{"feature": f, "share": round(v / tot, 4)} for f, v in sorted(a.items(), key=lambda kv: -kv[1])[:k]]
+
+
 class PumpRealtimeGroup:
-    """펌프 14대. update() 는 이번 tick 의 릴레이 경보 목록, status()/pump_scores() 는 펌프별 현재 상태."""
+    """펌프 14대. update() 는 이번 tick 의 진단 경보 목록, status()/pump_scores() 는 펌프별 현재 상태."""
 
     def __init__(self, pumps=None, settings=None, artifact_dir=None, baseline_dir=BASELINE_DIR, keep_cycles=2000):
         s = settings or load_settings()
@@ -156,7 +158,7 @@ class PumpRealtimeGroup:
 
     # ------------------------------------------------------------------ #
     def update(self, current_time, row):
-        """row: {태그/주소: 원시 PLC 값}. 반환: 이번 tick 의 릴레이 경보 [diagnose 형식]."""
+        """row: {태그/주소: 원시 PLC 값}. 반환: 이번 tick 의 진단 경보 [diagnose 형식]."""
         t = to_kst_naive(current_time)
         row = self._alias(row)
         keys = set(row)
@@ -204,6 +206,8 @@ class PumpRealtimeGroup:
                         "reason": f"{r['top_feature']} {r['top_dir']}", "group": r["group"]})
             if not r["in_scope"]:
                 rec["mode"] = "판정 범위 밖"
+            elif cy.get("flag_cadence"):
+                rec["mode"] = "수집 간격"                     # 0.5초 틱이 아닌 구간(진단 모드·공백) — 참고값만
             elif cy.get("flag_stopped"):
                 rec["mode"] = "점검·수동"                     # 참고값만 — 창 판정·경보 없음
             elif cy.get("flag_alarm"):
@@ -214,7 +218,7 @@ class PumpRealtimeGroup:
                 w = self.win.update(p, r["group"], r["score"], r["zmax"], t=cy["t_start"],
                                     reason=rec["reason"], level=r["level"], zn=zn)
                 self.diag.update(p, w, cy["t_start"])
-                rec.update({"pump_level": w["pump_level"], "notify": w["notify"], "window_reason": w["reason"]})
+                rec.update({"pump_level": w["pump_level"], "notify": w["notify"], "window_reason": w["reason"], "zn": zn})
         self.last[p] = rec
         self.cycles.append(rec)
 
@@ -232,7 +236,9 @@ class PumpRealtimeGroup:
 
     def pump_scores(self):
         """백엔드 PumpMonitor.check() 반환 형식 — 14개 전량 {펌프: dict 또는 None}.
-        None = 판정 없음(정지·순환·점검·범위 밖, 아직 사이클 없음). over = 펌프 등급이 알림."""
+        None = 판정 없음(정지·순환·점검·범위 밖, 아직 사이클 없음). over = 펌프 등급이 알림
+        (백엔드 Pump_Monitor 는 over 를 '경보를 띄우는 중'(근무 끝까지 유지)으로 덮어쓴다).
+        top: 마지막 사이클 피처 편차 |zn| 상위 3개와 비중 — Health_Digest 가 '기여 피처 %' 로 읽는다."""
         out = {}
         for p in self.pumps:
             r = self.last[p]
@@ -244,7 +250,7 @@ class PumpRealtimeGroup:
             out[p] = {"mse": None if pd.isna(r["score"]) else round(float(r["score"]), 6),
                       "threshold": None if pd.isna(thr) else round(float(thr), 6),
                       "over": r["pump_level"] == "알림", "level": r["pump_level"], "cycle_level": r["level"],
-                      "top": [{"feature": (r.get("window_reason") or "").split(" ")[0], "share": None}],
+                      "top": _top_features(r.get("zn")),
                       "wagon": None, "tick": None}
         return out
 
