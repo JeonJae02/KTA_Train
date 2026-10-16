@@ -1,0 +1,20 @@
+{
+  "name": "Opening",
+  "W": 20,
+  "DBL_W": 100,
+  "th": {
+    "over_cnt": 154.0,
+    "cnt_lo": 125.0,
+    "cnt_hi": 147.0,
+    "roll_lo": 134.0,
+    "roll_hi": 141.0,
+    "dur_hi": 20.12,
+    "roll_dur_hi": 15.09,
+    "dbl_median": 2.0,
+    "dbl_hi": 6.242640687119286,
+    "cnt_median": 137.0,
+    "train_from": "2026-09-09 19:00:17.434612",
+    "train_to": "2026-10-05 17:01:51.459859",
+    "train_n": 62025
+  }
+}

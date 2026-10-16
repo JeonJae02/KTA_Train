@@ -23,6 +23,7 @@ parkkt/Tank_Temp_Factor_Analysis.py
 parkkt/A2VK-REXROTH.pdf
 
 parkkt/cache/
+parkkt/conv/conv_count_out/
 
 *.pth
 *.pkl
