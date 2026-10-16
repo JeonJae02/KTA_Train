@@ -1,0 +1,20 @@
+{
+  "name": "Pour_Zone",
+  "W": 20,
+  "DBL_W": 100,
+  "th": {
+    "over_cnt": 155.0,
+    "cnt_lo": 129.12,
+    "cnt_hi": 147.0,
+    "roll_lo": 134.0,
+    "roll_hi": 141.0,
+    "dur_hi": 20.31,
+    "roll_dur_hi": 14.07,
+    "dbl_median": 0.0,
+    "dbl_hi": 2.0,
+    "cnt_median": 137.0,
+    "train_from": "2026-09-09 19:00:23.151319",
+    "train_to": "2026-10-05 17:01:42.608120",
+    "train_n": 64241
+  }
+}

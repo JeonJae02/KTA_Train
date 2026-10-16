@@ -1,0 +1,20 @@
+{
+  "name": "Conv_Stop",
+  "W": 20,
+  "DBL_W": 100,
+  "th": {
+    "over_cnt": 154.0,
+    "cnt_lo": 127.0,
+    "cnt_hi": 147.0,
+    "roll_lo": 133.5,
+    "roll_hi": 141.0,
+    "dur_hi": 20.04,
+    "roll_dur_hi": 14.13,
+    "dbl_median": 0.0,
+    "dbl_hi": 2.0,
+    "cnt_median": 137.0,
+    "train_from": "2026-09-09 19:00:24.671025",
+    "train_to": "2026-10-05 17:01:44.191275",
+    "train_n": 64179
+  }
+}
