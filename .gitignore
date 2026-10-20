@@ -32,3 +32,5 @@ cache/
 
 # 이식 묶음 (make_port.py 로 생성)
 HDI_MODEL/relay_port/out/
+
+IL/
