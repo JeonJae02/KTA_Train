@@ -34,8 +34,8 @@ COUNTERS = {
 RESET_DROP = 50
 #: 샘플 간격이 이보다 길면 DB 공백으로 보고 위치를 이어 붙이지 않는다
 GAP_SEC = 5.0
-#: 초당 카운트 = K_SPEED × Hz_In_Conv/10  (10/19 실측, 324–405 전 구간에서 일정)
-K_SPEED = 0.2743
+#: 초당 카운트 = K_SPEED × Hz_In_Conv/10  (09-10 – 10-19 가동 31일, 일별 ±0.0001, 324–405 전 속도에서 같음)
+K_SPEED = 0.2744
 
 
 def load_group(group, start, end=None):
@@ -82,6 +82,7 @@ def counter_resets(df, counter):
     r = (x.diff() < -RESET_DROP) & (df["seg"] == df["seg"].shift(1))
     v = x[r]
     rate = (df["dpos"] / df["dt"]).rolling(20, min_periods=3).median()[r]
+    rate = rate.where(rate > 0.5)                  # 거의 멈춘 구간은 시각 추정을 하지 않는다 (t_est = NaT)
     out = pd.DataFrame({
         "t_row": df.index[r],
         "pos": (df["pos"][r] - (v - 1)).to_numpy(),
