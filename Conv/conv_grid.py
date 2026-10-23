@@ -19,7 +19,7 @@
 import numpy as np
 import pandas as pd
 
-from conv_core import add_position, bit_edges, counter_resets, load_group
+from conv_core import RESET_DROP, add_position, bit_edges, counter_resets, load_group
 
 #: 기준 센서 6개. core=True 는 대차에 무관하게 같은 타이밍에 켜지는 코어 센서
 #: first = 그 위치의 1번 대차 감지 센서 (있으면 그날 몇 대 뒤인지 직접 확인)
@@ -126,6 +126,14 @@ def day_events(day, sensors=SENSORS):
             ev = ref.copy() if s.counter == "R00040" else counter_resets(d, s.counter)
             if len(ev) < 200:
                 continue
+            ev = ev.sort_values("pos").reset_index(drop=True)
+            # 2차 리셋: 카운터가 조금(< RESET_DROP) 떨어짐 = 같은 대차가 지나가는 중에 센서가 다시 켜져 카운터가 1 로 돌아감.
+            # 이물에 한 번, 원래 표식에 한 번 켜지거나 채터링일 때 생긴다. PLC 는 마지막 엣지를 기준으로 동작한다.
+            dx = d[s.counter].diff()
+            sec = (dx < 0) & (dx > -RESET_DROP) & (d.seg == d.seg.shift(1))
+            sp = np.sort((d.pos[sec] - (d[s.counter][sec] - 1)).to_numpy())
+            nxt = np.r_[ev.pos.to_numpy()[1:], np.inf]
+            rearm = np.searchsorted(sp, nxt) - np.searchsorted(sp, ev.pos.to_numpy(), side="right")
             n_first = n_from_first_wagon(d, s["first"]) if isinstance(s["first"], str) and s["first"] in d else None
             n_use = n_first if n_first is not None else (None if pd.isna(s["n_fix"]) else int(s["n_fix"]))
             n, dist, wag = _match_back(ref, ev, n_use)
@@ -134,6 +142,7 @@ def day_events(day, sensors=SENSORS):
                 "seg": ev.seg.to_numpy(), "n_back": n, "n_src": "1번대차" if n_first is not None else ("고정" if n_use is not None else "패턴"),
                 "dist": dist, "wagon": wag,
                 "width": _width(d, bit, ev.pos.to_numpy(), ev.seg.to_numpy()),
+                "rearm": rearm,
             })
             # 피치 = 앞 대차와의 간격. 바로 앞 대차(번호 −1)일 때만
             prev_w = (e.wagon.shift(1) % N_WAGON) + 1
@@ -155,7 +164,7 @@ def daily_table(ev):
     """(날짜, 센서, 대차)별 중앙값. 대차 하나가 하루 약 100번 지나가므로 하강 오차가 평균된다."""
     g = ev.groupby(["day", "sensor", "wagon"])
     t = g.agg(n=("pos", "size"), dist=("dist", "median"), width=("width", "median"),
-              width_n=("width", "count"), pitch=("pitch", "median")).reset_index()
+              width_n=("width", "count"), pitch=("pitch", "median"), rearm=("rearm", "mean")).reset_index()
     t["jitter"] = g.dist.apply(lambda x: _iqr(x.to_numpy())).to_numpy()
     return t
 
@@ -171,15 +180,28 @@ BACK_TOL = 1.5          # 이물 지수가 이 아래로 내려오면 복귀
 N_ACCEPT = 3            # 위치 변화가 가동일 n일 유지되면 새 정상으로 승인
 SENSOR_SHARE = 0.5      # 센서 하나에서 대차 절반 이상이 같은 판정이면 센서 문제로 올린다
 SPEED_TOL = 0.003       # 속도 비율이 기준에서 0.3% 넘게 벗어나면 구동부
+REARM_TOL = 0.5         # 대차 한 번 지날 때 2차 리셋이 평균 0.5 번 이상이면 재감지 (코어 센서는 0.01 안팎)
+SENSOR_REARM_TOL = 0.1  # 센서 전체에서 통과당 2차 리셋이 0.1 번 넘으면 센서 단위 재감지(채터링)
 
 
 def add_metrics(t):
     """물리적 정상(그날 그 센서 대차 대부분의 값) 대비 앞 끝·뒤 끝·켜짐 길이 편차와 센서별 허용폭."""
     t = t.copy()
-    by = t.groupby(["day", "sensor"])
-    t["D"] = by.dist.transform("median")                 # 센서 간 고정 거리 (그날)
-    t["W0"] = by.width.transform("median")               # 그 센서의 정상 켜짐 길이 (그날)
-    t["J0"] = by.jitter.transform("median")              # 그 센서의 평소 대차 안 흔들림 (그날)
+    # 물리적 정상은 "깨끗한 대차"로 잡는다. 이물 대차가 많은 센서(전진 진입은 3분의 1)에서 전체 중앙값을 쓰면
+    # 기준이 일찍 켜지는 쪽으로 끌려가 멀쩡한 대차가 위치 변화로 보인다.
+    #   1) 재감지가 적은 대차로 정상 켜짐 길이 W0
+    #   2) 그중 켜짐 길이도 정상인 대차로 센서 간 거리 D
+    rearm = t["rearm"] if "rearm" in t else pd.Series(0.0, index=t.index)
+    clean1 = rearm < REARM_TOL / 2
+    w_clean = t.width.where(clean1)
+    t["W0"] = w_clean.groupby([t.day, t.sensor]).transform("median")
+    t["W0"] = t.W0.fillna(t.groupby(["day", "sensor"]).width.transform("median"))
+    clean2 = clean1 & ((t.width - t.W0).abs() <= 1.5)
+    t["D"] = t.dist.where(clean2).groupby([t.day, t.sensor]).transform("median")
+    t["D"] = t.D.fillna(t.groupby(["day", "sensor"]).dist.transform("median"))   # 센서 간 고정 거리 (그날)
+    t["J0"] = t.jitter.where(clean2).groupby([t.day, t.sensor]).transform("median")  # 평소 대차 안 흔들림
+    t["J0"] = t.J0.fillna(t.groupby(["day", "sensor"]).jitter.transform("median"))
+    t["n_clean"] = clean2.groupby([t.day, t.sensor]).transform("sum")
     t["rise_off"] = t.dist - t.D                         # 앞 끝 편차 (−: 일찍 켜짐)
     t["width_ex"] = t.width - t.W0                       # 이물 지수 (+: 길게 켜짐)
     t["fall_off"] = t.rise_off + t.width_ex              # 뒤 끝 편차
@@ -190,7 +212,9 @@ def add_metrics(t):
 
 
 def classify_cell(r):
-    """대차×센서×날짜 한 칸의 상태. 우선순위: 이물 > 위치 변화 > 흔들림 > 정상."""
+    """대차×센서×날짜 한 칸의 상태. 우선순위: 재감지 > 이물 > 위치 변화 > 흔들림 > 정상."""
+    if r.get("rearm", 0) >= REARM_TOL:
+        return "이물(분리)"                               # 한 대차에서 두 번 켜짐 — 떨어진 이물 또는 채터링
     if r.width_ex >= W_TOL:
         if r.rise_off <= -(r.width_ex - 2):
             return "이물(앞)"                             # 앞만 당겨지고 뒤는 그대로
@@ -221,9 +245,15 @@ def judge(t, n_accept=N_ACCEPT):
         prev_state, run, run_val, accepted_val = "정상", 0, None, 0.0
         for i, r in g.iterrows():
             s = r.state
+            # 히스테리시스: 이물이었다면 이물 지수 < 1.5 이고 재감지 < 0.25 일 때만 복귀로 본다.
+            # 그 사이 값이면 이물 상태를 이어간다 (기준 근처에서 날마다 뒤집히지 않게)
+            recovered = (r.width_ex < BACK_TOL) and (r.get("rearm", 0) < REARM_TOL / 2)
+            if prev_state.startswith("이물") and not s.startswith("이물") and not recovered:
+                s = prev_state
+                t.at[i, "state"] = s
             if s.startswith("이물") and not prev_state.startswith("이물"):
                 t.at[i, "event"] = "새 이물"
-            elif prev_state.startswith("이물") and r.width_ex < BACK_TOL:
+            elif prev_state.startswith("이물") and not s.startswith("이물"):
                 t.at[i, "event"] = "이물 복귀"
             if s == "위치 변화":
                 same = run_val is not None and abs(r.rise_off - run_val) < r.t_tol
@@ -255,18 +285,23 @@ def sensor_level(t, long_ref):
     share : 그날 그 센서에서 대차 절반 이상이 같은 상태 → 센서 문제로 올린다
     lv    : 장기 기준 대비 D·W0·J0 변화와 flag
             센서 이동 (|dD| ≥ 3) / 센서 감도·면 오염 (dW0 ≥ 3) / 센서 흔들림 (J0 ≥ 3 이고 기준보다 2 이상 큼)
+            / 센서 재감지 (통과당 2차 리셋 ≥ 0.1 — 대차 여럿에서 두 번씩 켜짐)
     """
     share = (t[t.state != "정상"].groupby(["day", "sensor", "state"]).size()
              / t.groupby(["day", "sensor"]).size()).rename("share").reset_index()
     share = share[share.share >= SENSOR_SHARE]
-    lv = t.groupby(["day", "sensor"]).agg(D=("D", "first"), W0=("W0", "first"), J0=("J0", "first")).reset_index()
+    agg = dict(D=("D", "first"), W0=("W0", "first"), J0=("J0", "first"))
+    if "rearm" in t:
+        agg["rearm"] = ("rearm", "mean")
+    lv = t.groupby(["day", "sensor"]).agg(**agg).reset_index()
     lv = lv.merge(long_ref, on="sensor", suffixes=("", "_ref"))
     lv["dD"] = lv.D - lv.D_ref                           # 센서 이동(이 센서만) 또는 체인 늘어남(전 센서 비례)
     lv["dW0"] = lv.W0 - lv.W0_ref                        # 센서 감도·센서 면 오염 (전 대차 켜짐 길이)
     lv["dJ0"] = lv.J0 - lv.J0_ref                        # 센서 고정 상태 (전 대차 흔들림)
+    rearm = lv["rearm"] if "rearm" in lv else pd.Series(0.0, index=lv.index)
     flag = np.select(
-        [lv.dD.abs() >= T_TOL, lv.dW0 >= W_TOL, (lv.J0 >= J_TOL) & (lv.dJ0 >= 2)],
-        ["센서 이동", "센서 감도·면 오염", "센서 흔들림"], default="")
+        [lv.dD.abs() >= T_TOL, lv.dW0 >= W_TOL, (lv.J0 >= J_TOL) & (lv.dJ0 >= 2), rearm >= SENSOR_REARM_TOL],
+        ["센서 이동", "센서 감도·면 오염", "센서 흔들림", "센서 재감지"], default="")
     lv["flag"] = flag
     return share, lv
 
