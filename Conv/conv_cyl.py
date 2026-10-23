@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 from conv_core import load_group, add_position
+from conv_grid import load_merged
 
 MAX_GAP = 1.2           # 초. 이보다 긴 샘플 간격 사이의 변화는 시각을 모른다고 본다
 MAX_CYCLE = 30.0        # 초. 사이클(스톱퍼 SOL ON → 다음 ON)이 이보다 길면 중간에 라인이 멈춘 것으로 보고 지표에서 뺀다
@@ -82,7 +83,8 @@ def cycle_table(day, unit, wagon_events=None):
     wagon_events : conv_grid.day_events 결과 중 이 유닛 진입 센서 이벤트(t, wagon). 있으면 대차 번호를 붙인다.
     """
     u = UNITS[unit]
-    raw = load_group(u["group"], day)
+    # 위치는 카운터 전부로 만든다 (conv_grid.day_events 와 같음). 유닛 그룹 파일만 쓰면 카운터가 3개라 2차 리셋에 흔들린다
+    raw = load_merged(day, list(dict.fromkeys([u["group"], "main", "opening", "md_fwd", "md_rev"])))
     if raw.empty:
         return pd.DataFrame()
     d = add_position(raw)

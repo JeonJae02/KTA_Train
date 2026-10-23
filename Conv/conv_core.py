@@ -59,7 +59,13 @@ def add_position(df, counters=None):
     df = df.copy()
     cs = [c for c in (counters or COUNTERS) if c in df.columns]
     d = df[cs].diff()
-    inc = d.where(d.abs() < RESET_DROP).median(axis=1).fillna(0.0)
+    # 2차 리셋(같은 대차에서 센서가 다시 켜짐)은 카운터를 조금 떨어뜨린다. 이걸 중앙값에 넣으면 같은 샘플에
+    # 다른 카운터가 1차 리셋으로 빠졌을 때 (+6, −8) 처럼 남아 위치를 잃는다 → 다수 방향 값만으로 중앙값.
+    # (전진 진입 R00055 가 그룹 파일에 같이 있는 md_fwd 에서 대차별로 최대 10카운트 틀어졌다. 10-23 수정)
+    valid = d.where(d.abs() < RESET_DROP)
+    n_pos, n_neg = (valid >= 0).sum(axis=1), (valid < 0).sum(axis=1)
+    inc = valid.where(valid >= 0).median(axis=1).where(n_pos >= n_neg, valid.where(valid < 0).median(axis=1))
+    inc = inc.fillna(0.0)
     dt = df.index.to_series().diff().dt.total_seconds()
     gap = (dt > GAP_SEC) | dt.isna()
     inc[gap] = 0.0
