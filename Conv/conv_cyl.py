@@ -15,6 +15,12 @@
 - 비트가 바뀐 시각 = 바뀌기 전 샘플과 바뀐 샘플의 중간. 샘플 간격(약 0.5초)보다 짧은 동작은 사이클 하나로는
   못 재지만, **하루 평균은 치우침 없이 정확하다** (샘플 위상이 사이클마다 무작위이므로). 그래서 판정은 일별 평균으로 한다.
 - 샘플 간격이 MAX_GAP 보다 긴 곳에서 바뀐 비트는 시각을 버린다.
+
+짧은 신호는 PLC 래치로 대체한다 (사이클 중 잡히는 비율, 10-16)
+- 끝단 후진 (P00453 · P0045B · P00132) 은 0.5초 안팎의 펄스라 66 – 76% 만 잡힌다.
+  끝단 후진이 켜지는 순간 SET 되어 원점복귀까지 유지되는 `Air_Supply*_Rev_PX_CHK` 를 쓰면 100% 다.
+  이 래치는 비상 감지·주입 시간 초과·에러 중 리셋으로도 켜지지만, 그런 사이클은 그 자체가 이상 사이클이다.
+- 래치는 D 블록이라 P 비트보다 조금 늦게 읽힌다. 끌림 거리는 카운트(같은 행의 위치) 차이라 영향이 작다.
 """
 
 import numpy as np
@@ -30,15 +36,15 @@ UNITS = {
     "md_fwd": dict(name="전진 유닛", group="md_fwd", counter="R00055",
                    stop_sol="P00470", nozzle_sol="P00471", return_sol="P00472", open_sol="P00473",
                    org="P00452", rev="P00453", flt="P00454", stop_fwd="P00455", stop_rev="P00456",
-                   nozzle_rev=["P00457"], prefix="Air_Supply2"),
+                   nozzle_rev=["P00457"], prefix="Air_Supply2", rev_latch="Air_Supply2_Rev_PX_CHK"),
     "md_rev": dict(name="후진 유닛", group="md_rev", counter="R00060",
                    stop_sol="P00474", nozzle_sol="P00475", return_sol="P00476", open_sol="P00477",
                    org="P0045A", rev="P0045B", flt="P0045C", stop_fwd="P0045D", stop_rev="P0045E",
-                   nozzle_rev=["P0045F"], prefix="Air_Supply3"),
+                   nozzle_rev=["P0045F"], prefix="Air_Supply3", rev_latch="Air_Supply3_Rev_PX_CHK"),
     "airbag": dict(name="에어백 유닛", group="airbag", counter="R00050",
                    stop_sol="P0028A", nozzle_sol="P0028B", return_sol="P0028C", open_sol="P00243",
                    org="P00131", rev="P00132", flt="P00133", stop_fwd="P00134", stop_rev="P00135",
-                   nozzle_rev=["P00136", "P00137"], prefix="Air_Supply"),
+                   nozzle_rev=["P00136", "P00137"], prefix="Air_Supply", rev_latch="Air_Supply_Rev_PX_CHK"),
 }
 
 #: 사이클 지표: (이름, 시작 신호, 시작 변화, 끝 신호, 끝 변화, 단위, 설명)
@@ -52,7 +58,7 @@ METRICS = [
     ("nozzle_rev_time", "nozzle_sol", -1, "nozzle_rev", +1, "s", "노즐 후진 시간: SOL OFF → 후진감지 ON"),
     ("return_time", "stop_rev", +1, "org", +1, "s", "원점 복귀 시간: 스톱퍼 후진감지 ON(= 복귀 SOL ON) → 정위치 ON"),
     ("catch_cnt", "stop_fwd", +1, "org", -1, "cnt", "대차가 걸리기까지: 스톱퍼 전진감지 ON → 정위치 OFF"),
-    ("drag_cnt", "org", -1, "rev", +1, "cnt", "끌림 거리: 정위치 OFF → 끝단 후진 ON (이동대가 끌려간 거리)"),
+    ("drag_cnt", "org", -1, "rev_latch", +1, "cnt", "끌림 거리: 정위치 OFF → 끝단 후진 ON (이동대가 끌려간 거리)"),
     ("air_time", "open_sol", +1, "open_sol", -1, "s", "에어 주입 시간: 노즐 오픈 SOL ON → OFF"),
 ]
 
@@ -86,7 +92,8 @@ def cycle_table(day, unit, wagon_events=None):
     t0 = d.index[0]
 
     sig = {k: [u[k]] if isinstance(u[k], str) else u[k]
-           for k in ("stop_sol", "nozzle_sol", "return_sol", "open_sol", "org", "rev", "flt", "stop_fwd", "stop_rev", "nozzle_rev")}
+           for k in ("stop_sol", "nozzle_sol", "return_sol", "open_sol", "org", "rev", "flt", "stop_fwd", "stop_rev", "nozzle_rev",
+                     "rev_latch")}
     ed = {}
     for k, bits in sig.items():
         for j, b in enumerate(bits):

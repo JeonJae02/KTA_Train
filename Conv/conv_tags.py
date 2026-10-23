@@ -41,6 +41,8 @@ GROUPS = {
         "R00070", "R00071", "R00072", "R00073", "R00074",
         "Hz_In_Opening", "Opening_Auto_Sel", "Opening_DN_Start", "Opening_UP_Start",
         "Opening_Down_Fwd_Out", "Opening_Up_Rev_Out", "Opening_Slow_Out",
+        # 래치 (짧은 리밋 펄스 대신 — 감속 리밋 원본은 0.1초라 20%만 잡힘, 래치는 99% 이상)
+        "Opening_DN_Slow", "Opening_UP_Slow", "Opening_DN_Stop_PS", "Opening_UP_Stop_PS", "Opening_Run_Out",
         "Opening_Zone_In_PS_CHK_Err", "Opening_Unit_Err", "Opening_DN_Start_Err", "Opening_DN_Stop_Err",
         "Opening_UP_Start_Err", "Opening_UP_Stop_Err", "Opening_UP_Over_Err", "Opening_DN_Over_Err",
         "Opening_LS_CHK_Err",
@@ -54,6 +56,7 @@ GROUPS = {
         "R00031", "R00032", "R00033", "R00034",
         "Hz_In_Closing", "Closing_Auto_Sel", "Closing_DN_Start", "Closing_UP_Start",
         "Closing_Down_Fwd_Out", "Closing_Up_Rev_Out", "Closing_Slow_Out",
+        "Closing_DN_Slow", "Closing_UP_Slow", "Closing_DN_Stop_PS", "Closing_UP_Stop_PS", "Closing_Run_Out",
         "Closing_Zone_In_PS_CHK_Err", "Closing_Unit_Err", "Closing_DN_Start_Err", "Closing_DN_Stop_Err",
         "Closing_UP_Start_Err", "Closing_UP_Stop_Err", "Closing_UP_Over_Err", "Closing_DN_Over_Err",
         "Closing_LS_CHK_Err",
@@ -98,6 +101,10 @@ GROUPS = {
         "Air_Supply_Use_Sel", "AirBag_Zone_In_PS_CHK_Err", "AirBag_Zone_In_PS_CHK_OK",
         "Air_Supply_In_CHK_PX", "Air_Supply_In_CHK_Stopper_FWD", "Air_Supply_Nozzle_FWD",
         "Air_Supply_Nozzle_SOL_Open", "Air_Supply_Return_On", "Air_Supply_Total_Err",
+        # 래치: 끝단 후진(P00132)은 짧은 펄스라 70% 만 잡힘. Rev_PX_CHK 는 원점복귀까지 유지돼 100%
+        "Air_Supply_Rev_PX_CHK", "Air_Supply_Home_CHK", "Air_Supply_Home_Off_CHK", "Air_Supply_Nozzle_REV_CHK",
+        "Air_Supply_Stopper_CY_FWD_Err", "Air_Supply_Stopper_CY_REV_Err", "Air_Supply_Nozzle_CY_FWD_Err",
+        "Air_Supply_Nozzle_CY_REV_Err", "Air_Supply_Return_Err", "Air_Supply_Home_CHK_Err", "Air_Supply_Rev_FLT_PX_CHK_Err",
     ],
     # ⑦ 체인 텐션·안전 (장기 추세·마스킹용)
     "tension": [

@@ -4,6 +4,7 @@
     python Conv/extract_conv_cache.py --groups md_fwd closing          # 일부 그룹만
     python Conv/extract_conv_cache.py --start 2026-10-01 --end 2026-10-03
     python Conv/extract_conv_cache.py --status                         # 받은 현황만 출력
+    python Conv/extract_conv_cache.py --groups closing --force          # 태그를 추가했을 때 다시 받기
 
 저장: cache/conv_raw/{그룹}/{YYYY-MM-DD}.pkl.xz   (덜 끝난 날은 {날짜}_partial.pkl.xz)
       cache/conv_raw/_extract_log.csv               (요청마다 한 줄: 행수·소요·상태)
@@ -121,7 +122,7 @@ def fetch_day(ex, tags, day, end_dt):
     return df, note
 
 
-def extract(groups, start, end, sleep_sec, group_sleep_sec, dry_run=False):
+def extract(groups, start, end, sleep_sec, group_sleep_sec, dry_run=False, force=False):
     os.makedirs(CACHE_DIR, exist_ok=True)
     now = datetime.now()
     end_dt = pd.Timestamp(now if end in (None, "now") else pd.Timestamp(end) + pd.Timedelta(days=1)).floor("min")
@@ -141,7 +142,7 @@ def extract(groups, start, end, sleep_sec, group_sleep_sec, dry_run=False):
     for g in groups:
         for d in days:
             partial = d == today or pd.Timestamp(d) + pd.Timedelta(days=1) > end_dt
-            if not partial and os.path.exists(day_path(g, d)):
+            if not partial and os.path.exists(day_path(g, d)) and not force:
                 continue
             todo.append((g, d, partial))
     print(f"받을 것 {len(todo)}건 (그룹 {len(groups)}개 × {len(days)}일, 이미 있는 것 제외)", flush=True)
@@ -216,9 +217,10 @@ if __name__ == "__main__":
     ap.add_argument("--sleep", type=float, default=3.0, help="요청(하루치) 사이 쉬는 초")
     ap.add_argument("--group-sleep", type=float, default=10.0, help="그룹 바뀔 때 쉬는 초")
     ap.add_argument("--dry-run", action="store_true", help="받을 목록만 센다")
+    ap.add_argument("--force", action="store_true", help="이미 받은 날도 다시 받는다 (태그를 추가했을 때)")
     ap.add_argument("--status", action="store_true", help="받은 현황만 출력")
     a = ap.parse_args()
     if a.status:
         status()
     else:
-        extract(a.groups or ORDER, a.start, a.end, a.sleep, a.group_sleep, a.dry_run)
+        extract(a.groups or ORDER, a.start, a.end, a.sleep, a.group_sleep, a.dry_run, a.force)
