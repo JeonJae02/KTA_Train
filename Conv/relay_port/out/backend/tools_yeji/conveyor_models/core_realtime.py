@@ -41,6 +41,9 @@ WIDTH_WIN = 40           #: 통과 뒤 이 카운트 안의 첫 하강을 같은
 MATCH_TOL = 69           #: 대차 번호 매칭 허용 (피치 139 의 절반)
 WINDOW = 20              #: 현재 상태 = 최근 20번 통과 (대차당 약 3시간)
 MIN_PASSES = 8           #: 이보다 적게 지나간 칸은 판정하지 않는다
+MIN_WAGONS = 40          #: 센서 하나에서 판정 가능한 대차가 이보다 적으면 그 센서는 아직 판정하지 않는다
+#                          (기동 직후 몇 대만 모였을 때 "재감지 대차 10대"·센서 이동 같은 센서 단위 판정이 틀어지지 않게.
+#                           대차는 한 바퀴(약 9분)에 다 지나가므로 기다리는 시간은 한 바퀴 이하)
 DAY_MIN_PASSES = 20      #: 하루 마감 때 이보다 적은 칸은 기록하지 않는다 (배치와 같음)
 HISTORY_DAYS = 60        #: 가동일 기록 보관 일수 ("언제부터" 표시와 승인·복귀 판정)
 SPEED_WINDOW_SEC = 1800  #: 속도 비율은 최근 30분 정속 구간으로 본다
@@ -96,6 +99,7 @@ class CoreGrid:
         self.history = []                                # 지난 가동일 칸 (dict)
         self.day = None
         self.hz_hist = deque(maxlen=20)
+        self.run_hist = deque(maxlen=20)
         self.speed = deque()                             # (t, dpos, dt*hz/10)
         self.result = self.empty()
         if history_path and os.path.exists(history_path):
@@ -158,11 +162,15 @@ class CoreGrid:
                 if o["width"] is None and 0 < w <= WIDTH_WIN and o["seg"] == self.seg:
                     o["width"] = w
             self.prev_bit[s] = b
-        # 속도 비율 (정속 구간: Hz 가 20샘플 그대로, 운전 중)
+        # 속도 비율 (정속 구간: Hz 지령과 운전이 둘 다 20샘플(약 10초) 그대로)
+        # 운전이 막 켜진 직후는 지령은 그대로여도 인버터가 가속 중이라 실제 속도가 낮다. 운전 ON/OFF 가 잦은
+        # 시간대(휴식·인칭 운전)에 이 구간이 섞이면 속도 비율이 −1% 까지 내려가 구동부 오탐이 난다.
         hz = self.last.get(HZ_TAG)
         self.hz_hist.append(hz)
-        steady = hz is not None and hz > 0 and len(self.hz_hist) == self.hz_hist.maxlen and len(set(self.hz_hist)) == 1
-        if steady and not self.new_seg and dt is not None and dt < 1.0 and inc > 0 and (self.last.get(RUN_TAG) or 0) > 0:
+        self.run_hist.append((self.last.get(RUN_TAG) or 0) > 0)
+        steady = (hz is not None and hz > 0 and len(self.hz_hist) == self.hz_hist.maxlen and len(set(self.hz_hist)) == 1
+                  and all(self.run_hist))
+        if steady and not self.new_seg and dt is not None and dt < 1.0 and inc > 0:
             self.speed.append((t, inc, dt * hz / 10))
         while self.speed and (t - self.speed[0][0]).total_seconds() > SPEED_WINDOW_SEC:
             self.speed.popleft()
@@ -274,8 +282,10 @@ class CoreGrid:
         """센서별·대차별 결과. 스테이션으로 묶는 건 ConveyorMonitor 가 한다."""
         sensors = self._blank_sensors()
         wagons = {f"{w:02d}": dict(sev=None, items=[]) for w in range(1, N_WAGON + 1)}
-        flags = {r.sensor: r.flag.split(", ") for r in lv.itertuples() if r.flag}
-        for r in now.itertuples():
+        n_wagons = now.groupby("sensor").wagon.nunique()
+        ready = {s for s in SENSORS if n_wagons.get(s, 0) >= MIN_WAGONS}
+        flags = {r.sensor: r.flag.split(", ") for r in lv.itertuples() if r.flag and r.sensor in ready}
+        for r in now[now.sensor.isin(ready)].itertuples():
             # 센서 재감지로 묶인 칸은 센서 쪽 플래그 하나로만 낸다 (대차에는 정상으로)
             sev = 0 if absorbed_by_sensor(r.state, flags.get(r.sensor, ())) else cell_sev(r.state, r.accepted)
             se, wk = sensors[r.sensor], wagons[f"{int(r.wagon):02d}"]

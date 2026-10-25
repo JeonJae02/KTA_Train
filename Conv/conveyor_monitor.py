@@ -86,7 +86,7 @@ class ConveyorMonitor:
         core = self.core.result
         se, unit = core["sensors"][s], SENSORS[s]["unit"]
         items = [dict(flag=f["flag"], action=f["action"]) for f in se["flags"]]
-        sev = (2 if items else 0) if core["ready"] else None
+        sev = None if se["sev"] is None else (2 if items else 0)        # None: 이 센서는 아직 판정 전
         return dict(kind="sensor", unit=unit, unit_name=UNIT_GROUPS[unit], name=se["name"], **_status(sev),
                     message=f"{items[0]['flag']}: {items[0]['action']}" if items else "", items=items)
 
