@@ -23,7 +23,11 @@ N_ACCEPT = 3            # 위치 변화가 가동일 n일 유지되면 새 정�
 SENSOR_SHARE = 0.5      # 센서 하나에서 대차 절반 이상이 같은 판정이면 센서 문제로 올린다
 SPEED_TOL = 0.003       # 속도 비율이 기준에서 0.3% 넘게 벗어나면 구동부
 REARM_TOL = 0.5         # 대차 한 번 지날 때 2차 리셋이 평균 0.5 번 이상이면 재감지 (코어 센서는 0.01 안팎)
-SENSOR_REARM_TOL = 0.1  # 센서 전체에서 통과당 2차 리셋이 0.1 번 넘으면 센서 단위 재감지(채터링)
+SENSOR_REARM_TOL = 0.1  # 대차 한 칸에서 통과당 2차 리셋이 0.1 번 이상이면 "재감지 대차"로 센다
+SENSOR_REARM_WAGONS = 10  # 한 센서에서 재감지 대차가 10대 이상이면 센서 문제(센서 재감지)로 묶는다
+# 근거 (9/10–10/24, 36 가동일): 재감지 대차 수가 전진 진입은 하루 15–26대, 나머지 센서는 0–4대.
+# 재감지 때 먼저 켜지는 곳은 어느 센서든 표식 7·14카운트 앞(모든 대차에 있는 같은 자리)이라,
+# 한두 대면 그 대차 쪽(휨·헐거움·이물), 여러 대면 센서가 그 자리까지 보는 것(감지 거리·위치)으로 본다.
 
 
 def add_metrics(t):
@@ -127,7 +131,7 @@ def sensor_level(t, long_ref):
     share : 그날 그 센서에서 대차 절반 이상이 같은 상태 → 센서 문제로 올린다
     lv    : 장기 기준 대비 D·W0·J0 변화와 flag
             센서 이동 (|dD| ≥ 3) / 센서 감도·면 오염 (dW0 ≥ 3) / 센서 흔들림 (J0 ≥ 3 이고 기준보다 2 이상 큼)
-            / 센서 재감지 (통과당 2차 리셋 ≥ 0.1 — 대차 여럿에서 두 번씩 켜짐)
+            / 센서 재감지 (통과당 2차 리셋 ≥ 0.1 인 대차가 10대 이상)
     """
     share = (t[t.state != "정상"].groupby(["day", "sensor", "state"]).size()
              / t.groupby(["day", "sensor"]).size()).rename("share").reset_index()
@@ -135,14 +139,15 @@ def sensor_level(t, long_ref):
     agg = dict(D=("D", "first"), W0=("W0", "first"), J0=("J0", "first"))
     if "rearm" in t:
         agg["rearm"] = ("rearm", "mean")
+        agg["n_rearm"] = ("rearm", lambda x: int((x >= SENSOR_REARM_TOL).sum()))
     lv = t.groupby(["day", "sensor"]).agg(**agg).reset_index()
     lv = lv.merge(long_ref, on="sensor", suffixes=("", "_ref"))
     lv["dD"] = lv.D - lv.D_ref                           # 센서 이동(이 센서만) 또는 체인 늘어남(전 센서 비례)
     lv["dW0"] = lv.W0 - lv.W0_ref                        # 센서 감도·센서 면 오염 (전 대차 켜짐 길이)
     lv["dJ0"] = lv.J0 - lv.J0_ref                        # 센서 고정 상태 (전 대차 흔들림)
-    rearm = lv["rearm"] if "rearm" in lv else pd.Series(0.0, index=lv.index)
+    n_rearm = lv["n_rearm"] if "n_rearm" in lv else pd.Series(0, index=lv.index)
     conds = [(lv.dD.abs() >= T_TOL, "센서 이동"), (lv.dW0 >= W_TOL, "센서 감도·면 오염"),
-             ((lv.J0 >= J_TOL) & (lv.dJ0 >= 2), "센서 흔들림"), (rearm >= SENSOR_REARM_TOL, "센서 재감지")]
+             ((lv.J0 >= J_TOL) & (lv.dJ0 >= 2), "센서 흔들림"), (n_rearm >= SENSOR_REARM_WAGONS, "센서 재감지")]
     # 여러 개가 동시에 걸리면 전부 남긴다 (", " 로 이음)
     lv["flag"] = [", ".join(name for c, name in conds if c.iloc[i]) for i in range(len(lv))]
     return share, lv
@@ -164,6 +169,16 @@ def wagon_level(t, long_ref_pitch, core_bits):
 # --------------------------------------------------------------------------- #
 #: 0 정상 · 1 관찰 · 2 점검 추천 · 3 경고
 SEV_NAME = ["정상", "관찰", "점검 추천", "경고"]
+
+
+def absorbed_by_sensor(state, flags):
+    """센서 쪽 문제로 묶여 대차에는 표시하지 않는 칸인지.
+
+    센서 재감지(대차 10대 이상에서 다시 켜짐)가 켜진 센서는 그 센서의 대차 경고를 전부 센서 경고 하나로 묶는다.
+    대차마다 가르지 않는다 — 센서를 고치면 나머지도 같이 고쳐질 가능성이 크고, 화면에서 우선순위가 분명해진다.
+    센서를 고쳐 플래그가 꺼지면 대차 경고가 다시 대차 위에 뜬다.
+    """
+    return "센서 재감지" in flags
 
 
 def cell_sev(state, accepted=False):
@@ -204,5 +219,5 @@ FLAG_ACTION = {
     "센서 이동": "센서 브래킷 위치 점검",
     "센서 감도·면 오염": "센서 면 청소·감지 거리 확인",
     "센서 흔들림": "센서 고정 상태 확인",
-    "센서 재감지": "센서 감지 거리·채터링 확인",
+    "센서 재감지": "대차 여러 대에서 표식 앞까지 감지 → 센서 감지 거리·위치 확인",
 }

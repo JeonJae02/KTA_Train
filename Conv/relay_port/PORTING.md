@@ -88,9 +88,11 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
                  "sensor_flags": [], "wagons": [], "unit": null },
     "closing": { ... }, "opening": { ... },
     "fwd": { "name": "전진 유닛", "sensors": ["P00451"], "sev": 2, "status": "점검 추천",
-             "sensor_flags": [ { "sensor": "P00451", "name": "전진 진입", "flag": "센서 재감지", "action": "센서 감지 거리·채터링 확인" } ],
-             "wagons": [ { "wagon": 13, "sensor": "P00451", "sev": 2, "status": "점검 추천", "state": "이물(분리)",
-                           "reason": "한 대차에서 다시 켜짐 (통과당 1.9번) → 표식 앞 떨어진 이물 또는 채터링", "since": "09-10" }, ... ],
+             "sensor_flags": [ { "sensor": "P00451", "name": "전진 진입", "flag": "센서 재감지",
+                                 "action": "대차 여러 대에서 표식 앞까지 감지 → 센서 감지 거리·위치 확인" } ],
+             "wagons": [],                    // 센서 재감지가 켜진 센서의 대차 경고는 센서 경고 하나로 묶는다
+             // 예) 오프닝: "wagons": [ { "wagon": 20, "sensor": "P00164", "sev": 2, "status": "점검 추천", "state": "이물(분리)",
+             //                         "reason": "한 대차에서 다시 켜짐 (통과당 0.7번) → ...", "since": "09-10" } ]
              "unit": { "name": "전진 유닛", "ready": true, "sev": 0, "status": "정상", "basis": "오늘", "day": "10-19",
                        "cycles_today": 4473, "items": [] } },
     "rev": { ..., "unit": { "sev": 1, "status": "관찰", "basis": "오늘",
@@ -100,8 +102,8 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
                                          "since": "10-19" }, ... ] } },
     "airbag": { "name": "에어백 유닛", "sensors": [], ..., "unit": { ... } }
   },
-  "wagons": { "13": { "sev": 2, "status": "점검 추천",
-                      "stations": [ { "station": "fwd", "sensor": "P00451", "state": "이물(분리)", "reason": "...", "since": "09-10" } ] },
+  "wagons": { "20": { "sev": 2, "status": "점검 추천",
+                      "stations": [ { "station": "opening", "sensor": "P00164", "state": "이물(분리)", "reason": "...", "since": "09-10" } ] },
               "21": { "sev": 0, "status": "정상", "stations": [] }, ... }
 }
 ```
@@ -111,6 +113,7 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
 | 스테이션 `sev` | 코어 센서 결과(`wagons`, `sensor_flags`)와 유닛 결과(`unit`) 중 가장 나쁜 것 |
 | `wagons[].state` (코어) | `이물(분리)` 한 대차에서 다시 켜짐 · `이물(앞)` · `이물(뒤)` · `이물(기타)` · `위치 변화` (3 가동일 유지되면 승인) · `흔들림` |
 | `sensor_flags[].flag` (코어) | `센서 재감지` · `센서 이동` · `센서 감도·면 오염` · `센서 흔들림` — 대차가 아니라 센서 쪽 |
+| 센서 재감지 | 그 센서에서 다시 켜지는 대차가 10대 이상. 켜져 있는 동안 그 센서의 대차 경고는 `wagons` 에 내지 않는다 (센서를 고치면 같이 고쳐질 가능성이 커서). 꺼지면 다시 대차 위에 뜬다 |
 | `unit.items[]` (유닛) | 지표별: `state` 느려짐(점검 추천) · 빨라짐(관찰) · 거리 변화(점검 추천), `trend` 장기 기준보다 느림(관찰) |
 | `unit.basis` | `오늘` (오늘 사이클 2,000개 이상) / `전날까지` (아직 덜 모임) — 실린더는 하루 평균으로 판정하기 때문 |
 | `since` | 그 상태가 시작된 가동일 (MM-DD) |

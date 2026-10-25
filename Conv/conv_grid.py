@@ -185,5 +185,5 @@ def daily_table(ev):
 # 판정 — 규칙은 core_rules.py (실시간 모델과 같이 쓴다). 예전 이름으로도 부를 수 있게 다시 내보낸다
 # --------------------------------------------------------------------------- #
 from core_rules import (W_TOL, T_TOL, J_TOL, BACK_TOL, N_ACCEPT, SENSOR_SHARE, SPEED_TOL,  # noqa: E402,F401
-                        REARM_TOL, SENSOR_REARM_TOL, add_metrics, classify_cell, judge,
-                        sensor_level, wagon_level)
+                        REARM_TOL, SENSOR_REARM_TOL, SENSOR_REARM_WAGONS, absorbed_by_sensor,
+                        add_metrics, classify_cell, judge, sensor_level, wagon_level)

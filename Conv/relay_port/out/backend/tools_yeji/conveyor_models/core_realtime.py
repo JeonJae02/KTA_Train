@@ -31,7 +31,7 @@ from datetime import timedelta
 import numpy as np
 import pandas as pd
 
-from .core_rules import SEV_NAME, FLAG_ACTION, SPEED_TOL, cell_reason, cell_sev, judge, sensor_level
+from .core_rules import SEV_NAME, FLAG_ACTION, SPEED_TOL, absorbed_by_sensor, cell_reason, cell_sev, judge, sensor_level
 from .core_spec import COUNTERS, HZ_TAG, K_SPEED, LONG_REF, RUN_TAG, SENSORS, WAGON_TAG
 
 N_WAGON = 42
@@ -274,8 +274,10 @@ class CoreGrid:
         """센서별·대차별 결과. 스테이션으로 묶는 건 ConveyorMonitor 가 한다."""
         sensors = {s: dict(name=c["name"], station=c["station"], sev=None, flags=[], cells=[]) for s, c in SENSORS.items()}
         wagons = {f"{w:02d}": dict(sev=None, items=[]) for w in range(1, N_WAGON + 1)}
+        flags = {r.sensor: r.flag.split(", ") for r in lv.itertuples() if r.flag}
         for r in now.itertuples():
-            sev = cell_sev(r.state, r.accepted)
+            # 센서 재감지로 묶인 칸은 센서 쪽 플래그 하나로만 낸다 (대차에는 정상으로)
+            sev = 0 if absorbed_by_sensor(r.state, flags.get(r.sensor, ())) else cell_sev(r.state, r.accepted)
             se, wk = sensors[r.sensor], wagons[f"{int(r.wagon):02d}"]
             se["sev"] = max(se["sev"] or 0, sev)
             wk["sev"] = max(wk["sev"] or 0, sev)
@@ -285,12 +287,11 @@ class CoreGrid:
                             since=self._since(J, r.sensor, int(r.wagon), sev))
                 se["cells"].append(item)
                 wk["items"].append(dict(item, station=SENSORS[r.sensor]["station"]))
-        for r in lv.itertuples():
-            if r.flag:
-                se = sensors[r.sensor]
-                for f in r.flag.split(", "):
-                    se["flags"].append(dict(sensor=r.sensor, name=se["name"], flag=f, action=FLAG_ACTION.get(f, "")))
-                se["sev"] = max(se["sev"] or 0, 2)
+        for s, fs in flags.items():
+            se = sensors[s]
+            for f in fs:
+                se["flags"].append(dict(sensor=s, name=se["name"], flag=f, action=FLAG_ACTION.get(f, "")))
+            se["sev"] = max(se["sev"] or 0, 2)
         for se in sensors.values():
             se["cells"].sort(key=lambda x: (-x["sev"], x["wagon"]))
         w = self.last.get(WAGON_TAG)
