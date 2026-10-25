@@ -1,4 +1,4 @@
-"""대차 통과 센서 판정 규칙 — 배치(conv_02)와 실시간(conv_realtime)이 같이 쓴다.
+"""[코어 · 규칙] 대차 통과 센서 판정 규칙 — 배치(conv_02)와 실시간(core_realtime)이 같이 쓴다.
 
 입력은 (day, sensor, wagon) 한 칸에 dist · width · rearm · jitter (· pitch) 가 있는 표다.
   dist   : 같은 대차의 P00140 엣지에서 이 센서 엣지까지 카운트 (센서 간 거리 + 그 대차·센서 오프셋)

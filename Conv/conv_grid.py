@@ -20,18 +20,11 @@ import numpy as np
 import pandas as pd
 
 from conv_core import RESET_DROP, add_position, bit_edges, counter_resets, load_group
+from core_spec import SENSOR_TABLE
 
 #: 기준 센서 6개. core=True 는 대차에 무관하게 같은 타이밍에 켜지는 코어 센서
-#: first = 그 위치의 1번 대차 감지 센서 (있으면 그날 몇 대 뒤인지 직접 확인)
-#: n_fix = 1번 대차 센서가 없는 곳의 고정값 — 09-10 – 10-19 패턴 매칭 최빈값(31일 중 31일 같음)
-SENSORS = pd.DataFrame([
-    ("P00140", "대차 진입", "main", "R00040", True, "P00142", 0),
-    ("P00141", "대차 쉬프트", "main", "R00080", True, None, 0),
-    ("P00154", "클로징 진입", "closing", "R00030", True, None, 2),
-    ("P00164", "오프닝 진입", "opening", "R00070", True, None, 26),
-    ("P00451", "전진 진입", "md_fwd", "R00055", False, "P00450", 26),
-    ("P00459", "후진 진입", "md_rev", "R00060", True, "P00458", 41),
-], columns=["bit", "name", "group", "counter", "core", "first", "n_fix"]).set_index("bit")
+#: 센서 정의는 core_spec.py (실시간 모델과 같이 씀). ruler=True 는 "자" 역할이 확인된 센서
+SENSORS = SENSOR_TABLE
 
 N_WAGON = 42
 WIDTH_WIN = 40          # 상승 후 이 카운트 안의 첫 하강을 같은 펄스로 본다
@@ -189,8 +182,8 @@ def daily_table(ev):
 
 
 # --------------------------------------------------------------------------- #
-# 판정 — 규칙은 conv_rules.py (실시간 모델과 같이 쓴다). 예전 이름으로도 부를 수 있게 다시 내보낸다
+# 판정 — 규칙은 core_rules.py (실시간 모델과 같이 쓴다). 예전 이름으로도 부를 수 있게 다시 내보낸다
 # --------------------------------------------------------------------------- #
-from conv_rules import (W_TOL, T_TOL, J_TOL, BACK_TOL, N_ACCEPT, SENSOR_SHARE, SPEED_TOL,  # noqa: E402,F401
+from core_rules import (W_TOL, T_TOL, J_TOL, BACK_TOL, N_ACCEPT, SENSOR_SHARE, SPEED_TOL,  # noqa: E402,F401
                         REARM_TOL, SENSOR_REARM_TOL, add_metrics, classify_cell, judge,
                         sensor_level, wagon_level)
