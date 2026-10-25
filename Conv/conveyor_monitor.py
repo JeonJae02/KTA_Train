@@ -15,7 +15,7 @@ tick 하나:  CoreGrid.update  →  UnitMonitor.update × 3 (코어의 위치·�
   ready     코어가 판정할 만큼 통과가 모였는지
   line      라인 전체 (가장 나쁜 스테이션) + drive (구동부: 속도 비율)
   stations  주입부 · 클로징 존 · 오프닝 존 · 전진 유닛 · 후진 유닛 · 에어백 유닛
-            각 스테이션 = 코어 센서 결과(sensor_flags · wagons) + 유닛 결과(unit: 실린더 지표 · PLC 에러)
+            각 스테이션 = 코어 센서 결과(sensor_flags · wagons) + 유닛 결과(unit: 실린더 지표)
   wagons    대차 42대 상태와 걸린 센서
 """
 

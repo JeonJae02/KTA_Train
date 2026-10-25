@@ -60,7 +60,7 @@ LABEL = {m[0]: m[6].split(":")[0] for m in METRICS}
 SIGNAL_KEYS = ["stop_sol", "nozzle_sol", "return_sol", "open_sol", "org", "flt", "stop_fwd", "stop_rev",
                "nozzle_rev", "rev_latch"]
 
-#: PLC 에러 비트 (`{prefix}_{이름}`) — 운전 중 켜지면 경고
+#: PLC 에러 비트 (`{prefix}_{이름}`) — 배치 분석(conv_03)에서 참고로만 센다. 실시간 판정에는 쓰지 않는다
 ERRORS = {
     "Stopper_CY_FWD_Err": "스톱퍼 전진 시간 초과",
     "Stopper_CY_REV_Err": "스톱퍼 후진 시간 초과",
@@ -104,6 +104,4 @@ def metric_columns(unit):
 
 def required_tags(unit):
     """실시간 모델이 live_data 에서 읽는 태그 (tag_config 에 있어야 한다)."""
-    u = UNITS[unit]
-    tags = [b for k in SIGNAL_KEYS for b in bits(unit, k)]
-    return tags + [f"{u['prefix']}_{e}" for e in ERRORS]
+    return [b for k in SIGNAL_KEYS for b in bits(unit, k)]

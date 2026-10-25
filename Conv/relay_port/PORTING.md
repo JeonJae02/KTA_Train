@@ -54,7 +54,7 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
 
 기록 파일은 운영 중 매일 오전 6시에 갱신된다 — **배포 후 덮어쓰지 말 것.**
 
-**② `config/tag_config.py` 의 `MONIORING_TAGS` 에 태그 67개 추가** (목록: `out/required_tags.txt`). 전부 PREDICTIVE 블록 안이라 이미 수신 중이다.
+**② `config/tag_config.py` 의 `MONIORING_TAGS` 에 태그 46개 추가** (목록: `out/required_tags.txt`). 전부 PREDICTIVE 블록 안이라 이미 수신 중이다.
 
 ```python
     # 컨베이어 모델(tools_yeji/conveyor_models) 입력. 전부 PREDICTIVE 블록 안이라 이미 수신 중이다.
@@ -62,18 +62,12 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
     "R00030", "R00040", "R00055", "R00060", "R00070", "R00080",
     "P00140", "P00141", "P00154", "P00164", "P00451", "P00459",
     "Now_Actual_Wagon_Num", "Conv_Run_Out", "Hz_In_Conv",
-    # [유닛 전진] SOL 4 · 정위치 · 비상 · 스톱퍼 전진/후진 · 노즐 후진 · 끝단 후진 래치 · PLC 에러 7
+    # [유닛 전진] SOL 4 · 정위치 · 비상 · 스톱퍼 전진/후진 · 노즐 후진 · 끝단 후진 래치
     "P00470", "P00471", "P00472", "P00473", "P00452", "P00454", "P00455", "P00456", "P00457", "Air_Supply2_Rev_PX_CHK",
-    "Air_Supply2_Stopper_CY_FWD_Err", "Air_Supply2_Stopper_CY_REV_Err", "Air_Supply2_Nozzle_CY_FWD_Err",
-    "Air_Supply2_Nozzle_CY_REV_Err", "Air_Supply2_Return_Err", "Air_Supply2_Home_CHK_Err", "Air_Supply2_Rev_FLT_PX_CHK_Err",
     # [유닛 후진]
     "P00474", "P00475", "P00476", "P00477", "P0045A", "P0045C", "P0045D", "P0045E", "P0045F", "Air_Supply3_Rev_PX_CHK",
-    "Air_Supply3_Stopper_CY_FWD_Err", "Air_Supply3_Stopper_CY_REV_Err", "Air_Supply3_Nozzle_CY_FWD_Err",
-    "Air_Supply3_Nozzle_CY_REV_Err", "Air_Supply3_Return_Err", "Air_Supply3_Home_CHK_Err", "Air_Supply3_Rev_FLT_PX_CHK_Err",
     # [유닛 에어백] 노즐 후진감지가 2개 (P00136 · P00137)
     "P0028A", "P0028B", "P0028C", "P00243", "P00131", "P00133", "P00134", "P00135", "P00136", "P00137", "Air_Supply_Rev_PX_CHK",
-    "Air_Supply_Stopper_CY_FWD_Err", "Air_Supply_Stopper_CY_REV_Err", "Air_Supply_Nozzle_CY_FWD_Err",
-    "Air_Supply_Nozzle_CY_REV_Err", "Air_Supply_Return_Err", "Air_Supply_Home_CHK_Err", "Air_Supply_Rev_FLT_PX_CHK_Err",
 ```
 
 빠진 태그가 있으면 처음 tick 에 `⚠️ [ConveyorMonitor] 감시 태그 없음` 이 찍힌다.
@@ -98,13 +92,12 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
              "wagons": [ { "wagon": 13, "sensor": "P00451", "sev": 2, "status": "점검 추천", "state": "이물(분리)",
                            "reason": "한 대차에서 다시 켜짐 (통과당 1.9번) → 표식 앞 떨어진 이물 또는 채터링", "since": "09-10" }, ... ],
              "unit": { "name": "전진 유닛", "ready": true, "sev": 0, "status": "정상", "basis": "오늘", "day": "10-19",
-                       "cycles_today": 4473, "items": [], "errors": [] } },
+                       "cycles_today": 4473, "items": [] } },
     "rev": { ..., "unit": { "sev": 1, "status": "관찰", "basis": "오늘",
                             "items": [ { "metric": "stop_fwd_time", "sev": 1, "status": "관찰", "state": "정상",
                                          "trend": "장기 기준보다 느림",
                                          "reason": "스톱퍼 전진 시간 0.292초 (기준 0.280초) → 추세 관찰 (서서히 느려지는 중)",
-                                         "since": "10-19" }, ... ],
-                            "errors": [] } },
+                                         "since": "10-19" }, ... ] } },
     "airbag": { "name": "에어백 유닛", "sensors": [], ..., "unit": { ... } }
   },
   "wagons": { "13": { "sev": 2, "status": "점검 추천",
@@ -119,7 +112,6 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
 | `wagons[].state` (코어) | `이물(분리)` 한 대차에서 다시 켜짐 · `이물(앞)` · `이물(뒤)` · `이물(기타)` · `위치 변화` (3 가동일 유지되면 승인) · `흔들림` |
 | `sensor_flags[].flag` (코어) | `센서 재감지` · `센서 이동` · `센서 감도·면 오염` · `센서 흔들림` — 대차가 아니라 센서 쪽 |
 | `unit.items[]` (유닛) | 지표별: `state` 느려짐(점검 추천) · 빨라짐(관찰) · 거리 변화(점검 추천), `trend` 장기 기준보다 느림(관찰) |
-| `unit.errors[]` (유닛) | 오늘 운전 중 PLC 에러 (스톱퍼·노즐·복귀 시간 초과, 비상 감지) → 경고 |
 | `unit.basis` | `오늘` (오늘 사이클 2,000개 이상) / `전날까지` (아직 덜 모임) — 실린더는 하루 평균으로 판정하기 때문 |
 | `since` | 그 상태가 시작된 가동일 (MM-DD) |
 
@@ -134,7 +126,8 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
 
 ## 5. 운영 메모
 
-- **기동 직후:** 코어는 (센서, 대차)마다 8번 이상 지나가야 판정 (약 1시간). 유닛은 오늘 2,000 사이클(약 7–8시간)이 모이기 전까지 전날까지의 기록으로 판정하고, PLC 에러만 바로 반영한다.
+- **기동 직후:** 코어는 (센서, 대차)마다 8번 이상 지나가야 판정 (약 1시간). 유닛은 오늘 2,000 사이클(약 7–8시간)이 모이기 전까지 전날까지의 기록으로 판정한다.
+- **범위:** 정상 가동 중 이상 탐지만 한다. PLC 에러·알람은 다루지 않는다 (운전 중이 아니거나 30초 넘게 걸린 사이클은 버린다).
 - **재시작:** 지난 가동일 기록은 `data/conveyor_*_history.json` 에서 읽는다. 오늘 모은 것은 메모리라 처음부터 다시 모은다.
 - **DB 공백·정지:** 샘플 간격 5초 넘으면 코어 위치를 이어 붙이지 않는다. 유닛은 30초 넘게 걸린 사이클(중간에 멈춤)을 버린다.
 - **설정값:** `core_spec.py` (센서 간 거리 D, 장기 기준), `unit_spec.py` (`UNIT_REF` 유닛별 기준값·σ). 센서·실린더를 바꾸거나 정비로 기준이 바뀌면 conv_02 · conv_03 으로 다시 뽑는다.

@@ -14,7 +14,7 @@
 import numpy as np
 import pandas as pd
 
-from unit_spec import COUNT_METRICS, ERRORS, LABEL, TIME_METRICS
+from unit_spec import COUNT_METRICS, LABEL, TIME_METRICS
 
 Z_TOL = 5.0             #: 일별 평균이 단기 기준에서 σ 의 5배 넘게 벗어나면 변화
 Z_LONG = 3.0            #: 최근 7 가동일 중앙값이 장기 기준에서 3σ 넘게 벗어나면 장기 기준 이탈
@@ -114,7 +114,3 @@ def item_reason(col, state, trend, value, level, kind):
     if key not in ACTION:
         return f"{label} {fmt(value)}"
     return f"{label} {fmt(value)} (기준 {fmt(level)}) → {ACTION[key]}"
-
-
-def error_reason(name, n):
-    return f"PLC 에러: {ERRORS.get(name, name)} {n}회 (오늘, 운전 중)"
