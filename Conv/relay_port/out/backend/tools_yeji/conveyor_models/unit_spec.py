@@ -24,15 +24,15 @@ MAX_CYCLE = 30.0        #: 초. 사이클이 이보다 길면 중간에 라인�
 #: rev_latch: 끝단 후진은 0.5초 펄스라 원본은 67–79% 만 잡힌다. 끝단 도착 순간 SET 되어 원점복귀까지
 #:            유지되는 PLC 래치를 대신 쓴다 (99% 이상).
 UNITS = {
-    "md_fwd": dict(name="전진 유닛", station="fwd", group="md_fwd", prefix="Air_Supply2",
+    "md_fwd": dict(name="전진 Unit", station="fwd", group="md_fwd", prefix="Air_Supply2",
                    stop_sol="P00470", nozzle_sol="P00471", return_sol="P00472", open_sol="P00473",
                    org="P00452", rev="P00453", flt="P00454", stop_fwd="P00455", stop_rev="P00456",
                    nozzle_rev=["P00457"], rev_latch="Air_Supply2_Rev_PX_CHK"),
-    "md_rev": dict(name="후진 유닛", station="rev", group="md_rev", prefix="Air_Supply3",
+    "md_rev": dict(name="후진 Unit", station="rev", group="md_rev", prefix="Air_Supply3",
                    stop_sol="P00474", nozzle_sol="P00475", return_sol="P00476", open_sol="P00477",
                    org="P0045A", rev="P0045B", flt="P0045C", stop_fwd="P0045D", stop_rev="P0045E",
                    nozzle_rev=["P0045F"], rev_latch="Air_Supply3_Rev_PX_CHK"),
-    "airbag": dict(name="에어백 유닛", station="airbag", group="airbag", prefix="Air_Supply",
+    "airbag": dict(name="Air 주입 Unit", station="airbag", group="airbag", prefix="Air_Supply",
                    stop_sol="P0028A", nozzle_sol="P0028B", return_sol="P0028C", open_sol="P00243",
                    org="P00131", rev="P00132", flt="P00133", stop_fwd="P00134", stop_rev="P00135",
                    nozzle_rev=["P00136", "P00137"], rev_latch="Air_Supply_Rev_PX_CHK"),
@@ -87,10 +87,35 @@ UNIT_REF = {
 }
 
 
+#: 신호 키 → 현장 센서 시트의 센서명. 솔밸브(SOL)는 PLC 출력이라 시트에 없다
+SIGNAL_LABEL = {
+    "org": "캐리어 정위치감지", "rev": "캐리어 후진감지", "rev_latch": "캐리어 후진감지", "flt": "캐리어 비상감지1",
+    "stop_fwd": "스톱퍼CY 전진감지", "stop_rev": "스톱퍼CY 후진감지", "nozzle_rev": "Air주입CY 후진감지",
+}
+
+
 def bits(unit, key):
     """신호 키 → 비트 목록 (노즐 후진감지만 여러 개일 수 있다)."""
     v = UNITS[unit][key]
     return [v] if isinstance(v, str) else list(v)
+
+
+def metric_sensor(unit, col):
+    """지표 컬럼 → (그 지표의 끝을 정하는 센서 주소, 시트 센서명). 센서가 아닌 SOL 로만 재는 지표(air_time)는 (None, None).
+
+    끝단 후진은 원본(rev) 대신 PLC 래치(rev_latch)로 재지만, 현장에서 볼 센서는 원본 후진감지다.
+    """
+    j = int(col[-1]) - 1 if col[-2:] in ("_1", "_2") else 0
+    name = col[:-2] if col[-2:] in ("_1", "_2") else col
+    e_sig = next(m[3] for m in METRICS if m[0] == name)
+    if e_sig.endswith("_sol"):
+        return None, None
+    key = "rev" if e_sig == "rev_latch" else e_sig
+    b = bits(unit, key)
+    label = SIGNAL_LABEL[key]
+    if key == "nozzle_rev" and len(b) > 1:
+        label = f"Air{j + 1}주입 후진감지"
+    return b[j], label
 
 
 def metric_columns(unit):

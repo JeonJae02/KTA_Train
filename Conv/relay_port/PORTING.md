@@ -76,47 +76,67 @@ python Conv/relay_port/verify_port.py    # 묶음 코드로 과거 데이터 재
 
 **점수 숫자는 내지 않는다.** 상태 4단계와 근거 문구만. `sev` 는 단계 번호(0 정상 · 1 관찰 · 2 점검 추천 · 3 경고)로 색을 정할 때 쓴다.
 
+화면에 띄우는 자리 단위로 나눈다 (릴레이·펌프가 "표시 위치" 단위로 키를 잡는 것과 같은 방식).
+- `markers` — 그림 위 마커. 그 센서·유닛 **자체**의 문제 (코어 센서 6 · 유닛 실린더 3 · 구동부)
+- `wagons` — 대차 42대 (번호 고정). 코어 센서가 **그 대차에서** 본 문제
+
+정상인 것도 전부 보낸다 (마커·대차가 그림에 고정이라 전부 받는 쪽이 그리기 쉽다). 마커·대차마다 `message` 는 가장 나쁜 항목 1줄, `items` 는 전체 근거.
+
 ```jsonc
 {
-  "carrier": "대차번호-15",          // 지금 주입부(P00140)에 있는 대차 — 예전 MOCK 과 같은 키
-  "updated": "2026-10-19T23:59:59",
+  "carrier": "대차번호-14",          // 지금 주입부(P00140)에 있는 대차 — 예전 MOCK 과 같은 키
+  "updated": "2026-10-22T14:01:10",
   "ready": true,                      // false: 코어가 아직 판정할 만큼 통과가 안 모임 (기동 직후 약 1시간)
-  "line": { "sev": 2, "status": "점검 추천",
-            "drive": { "sev": 0, "status": "정상", "reason": "정상" } },   // 구동부: 속도 비율
-  "stations": {
-    "pour":    { "name": "주입부", "sensors": ["P00140","P00141"], "sev": 0, "status": "정상",
-                 "sensor_flags": [], "wagons": [], "unit": null },
-    "closing": { ... }, "opening": { ... },
-    "fwd": { "name": "전진 유닛", "sensors": ["P00451"], "sev": 2, "status": "점검 추천",
-             "sensor_flags": [ { "sensor": "P00451", "name": "전진 진입", "flag": "센서 재감지",
-                                 "action": "대차 여러 대에서 표식 앞까지 감지 → 센서 감지 거리·위치 확인" } ],
-             "wagons": [],                    // 센서 재감지가 켜진 센서의 대차 경고는 센서 경고 하나로 묶는다
-             // 예) 오프닝: "wagons": [ { "wagon": 20, "sensor": "P00164", "sev": 2, "status": "점검 추천", "state": "이물(분리)",
-             //                         "reason": "한 대차에서 다시 켜짐 (통과당 0.7번) → ...", "since": "09-10" } ]
-             "unit": { "name": "전진 유닛", "ready": true, "sev": 0, "status": "정상", "basis": "오늘", "day": "10-19",
-                       "cycles_today": 4473, "items": [] } },
-    "rev": { ..., "unit": { "sev": 1, "status": "관찰", "basis": "오늘",
-                            "items": [ { "metric": "stop_fwd_time", "sev": 1, "status": "관찰", "state": "정상",
-                                         "trend": "장기 기준보다 느림",
-                                         "reason": "스톱퍼 전진 시간 0.292초 (기준 0.280초) → 추세 관찰 (서서히 느려지는 중)",
-                                         "since": "10-19" }, ... ] } },
-    "airbag": { "name": "에어백 유닛", "sensors": [], ..., "unit": { ... } }
+  "line": { "sev": 2, "status": "점검 추천" },      // 마커·대차 중 가장 나쁜 것
+  "markers": {                        // 순서: Zone 진입 센서 → 전진 Unit → 후진 Unit → Air 주입 Unit → 구동부
+    "P00140": { "kind": "sensor", "unit": "zone", "unit_name": "Zone 진입 센서", "name": "캐리어 진입 Check",
+                "sev": 0, "status": "정상", "message": "", "items": [] },
+    "P00141": { ... }, "P00154": { ... }, "P00164": { ... },
+    "P00451": { "kind": "sensor", "unit": "md_fwd", "unit_name": "전진 Unit", "name": "전진Unit 캐리어 진입감지",
+                "sev": 2, "status": "점검 추천",
+                "message": "센서 재감지: 대차 여러 대에서 표식 앞까지 감지 → 센서 감지 거리·위치 확인",
+                "items": [ { "flag": "센서 재감지", "action": "대차 여러 대에서 표식 앞까지 감지 → 센서 감지 거리·위치 확인" } ] },
+    "md_fwd": { "kind": "unit", "unit": "md_fwd", "unit_name": "전진 Unit", "name": "전진 Unit 실린더",
+                "sev": 0, "status": "정상", "message": "", "basis": "전날까지", "day": "10-21", "cycles_today": 1955, "items": [] },
+    "P00459": { ... },
+    "md_rev": { "kind": "unit", "unit": "md_rev", "unit_name": "후진 Unit", "name": "후진 Unit 실린더",
+                "sev": 2, "status": "점검 추천",
+                "message": "스톱퍼 전진 시간 0.299초 (기준 0.280초) → 실린더·공압(레귤레이터·필터)·솔밸브 점검",
+                "basis": "전날까지", "day": "10-21", "cycles_today": 1955,
+                "items": [ { "metric": "stop_fwd_time", "sensor": "P0045D", "sensor_name": "스톱퍼CY 전진감지",
+                             "sev": 2, "status": "점검 추천", "state": "느려짐", "trend": "장기 기준보다 느림",
+                             "reason": "스톱퍼 전진 시간 0.299초 (기준 0.280초) → ...", "since": "10-21" } ] },
+    "airbag": { "kind": "unit", "unit": "airbag", "unit_name": "Air 주입 Unit", "name": "Air 주입 Unit 실린더", ... },
+    "drive":  { "kind": "drive", "unit": "drive", "unit_name": "구동부", "name": "컨베이어 구동부",
+                "sev": 0, "status": "정상", "message": "", "items": [] }       // 속도 비율
   },
-  "wagons": { "20": { "sev": 2, "status": "점검 추천",
-                      "stations": [ { "station": "opening", "sensor": "P00164", "state": "이물(분리)", "reason": "...", "since": "09-10" } ] },
-              "21": { "sev": 0, "status": "정상", "stations": [] }, ... }
+  "wagons": {
+    "01": { "sev": 0, "status": "정상", "message": "", "items": [] },
+    "20": { "sev": 2, "status": "점검 추천",
+            "message": "Opening Zone In Detect: 한 대차에서 다시 켜짐 (통과당 0.7번) → ...",
+            "items": [ { "sensor": "P00164", "name": "Opening Zone In Detect", "unit": "zone", "unit_name": "Zone 진입 센서",
+                         "sev": 2, "status": "점검 추천", "state": "이물(분리)",
+                         "reason": "한 대차에서 다시 켜짐 (통과당 0.7번) → ...", "since": "09-10" } ] },
+    ...                                // 42대 전부
+  }
 }
 ```
 
 | 필드 | 값 |
 |---|---|
-| 스테이션 `sev` | 코어 센서 결과(`wagons`, `sensor_flags`)와 유닛 결과(`unit`) 중 가장 나쁜 것 |
-| `wagons[].state` (코어) | `이물(분리)` 한 대차에서 다시 켜짐 · `이물(앞)` · `이물(뒤)` · `이물(기타)` · `위치 변화` (3 가동일 유지되면 승인) · `흔들림` |
-| `sensor_flags[].flag` (코어) | `센서 재감지` · `센서 이동` · `센서 감도·면 오염` · `센서 흔들림` — 대차가 아니라 센서 쪽 |
+| `markers` 키 | 코어 센서는 PLC 주소, 유닛 실린더는 `md_fwd` · `md_rev` · `airbag`, 구동부는 `drive` |
+| `markers[].kind` | `sensor` 코어 센서 · `unit` 유닛 실린더 · `drive` 구동부 |
+| `markers[].unit` · `unit_name` | 현장 센서 시트의 묶음: `zone` Zone 진입 센서 · `md_fwd` 전진 Unit · `md_rev` 후진 Unit · `airbag` Air 주입 Unit, 그리고 `drive` 구동부 |
+| `markers[].name` · `wagons[].items[].name` | 현장 센서 시트의 센서명 |
+| `sev` · `status` | `null` = 아직 판정 없음 (기동 직후). 0 정상 · 1 관찰 · 2 점검 추천 · 3 경고 |
+| 센서 마커 `items[].flag` | `센서 재감지` · `센서 이동` · `센서 감도·면 오염` · `센서 흔들림` |
 | 센서 재감지 | 그 센서에서 다시 켜지는 대차가 10대 이상. 켜져 있는 동안 그 센서의 대차 경고는 `wagons` 에 내지 않는다 (센서를 고치면 같이 고쳐질 가능성이 커서). 꺼지면 다시 대차 위에 뜬다 |
-| `unit.items[]` (유닛) | 지표별: `state` 느려짐(점검 추천) · 빨라짐(관찰) · 거리 변화(점검 추천), `trend` 장기 기준보다 느림(관찰) |
-| `unit.basis` | `오늘` (오늘 사이클 2,000개 이상) / `전날까지` (아직 덜 모임) — 실린더는 하루 평균으로 판정하기 때문 |
+| 유닛 마커 `items[]` | 지표별: `state` 느려짐(점검 추천) · 빨라짐(관찰) · 거리 변화(점검 추천), `trend` 장기 기준보다 느림(관찰). `sensor` · `sensor_name` = 그 지표의 끝을 정하는 센서 (에어 주입 시간은 SOL 로만 재서 `null`) |
+| 유닛 마커 `basis` | `오늘` (오늘 사이클 2,000개 이상) / `전날까지` (아직 덜 모임) — 실린더는 하루 평균으로 판정하기 때문 |
+| `wagons[].items[].state` | `이물(분리)` 한 대차에서 다시 켜짐 · `이물(앞)` · `이물(뒤)` · `이물(기타)` · `위치 변화` (3 가동일 유지되면 승인) · `흔들림` |
 | `since` | 그 상태가 시작된 가동일 (MM-DD) |
+
+**프론트 주의:** 지금 프론트 `types/socket.ts` 의 `isIdleData` 는 `conveyor.sensors` 가 `{이름: 숫자}` 인지 검사하고, 실패하면 `idle_data` 전체(릴레이·펌프 포함)를 버린다. 이 출력으로 바꿀 때 프론트 타입도 같이 바꿔야 한다.
 
 ## 4. 검증 (verify_port.py, 10-12 – 10-17 재생)
 

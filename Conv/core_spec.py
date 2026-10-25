@@ -25,13 +25,21 @@ HZ_TAG = "Hz_In_Conv"                  #: 속도 지령 (0.1 Hz)
 #:   first   : 그 위치의 1번 대차 감지 센서 (배치에서 몇 대 뒤인지 확인용)
 #:   n_fix   : P00140 에서 대차 몇 대 뒤인지 (1번 대차 센서가 없는 곳의 고정값)
 #:   group   : DB 캐시 그룹 (배치 분석용)
+#:   unit    : 화면 묶음 (현장 센서 시트의 구분: zone = Zone 진입 센서, md_fwd = 전진 Unit, md_rev = 후진 Unit)
+#:   label   : 현장 센서 시트의 센서명
 SENSOR_ROWS = [
-    dict(bit="P00140", name="대차 진입", station="pour", counter="R00040", D=0.0, ruler=True, first="P00142", n_fix=0, group="main"),
-    dict(bit="P00141", name="대차 쉬프트", station="pour", counter="R00080", D=19.0, ruler=True, first=None, n_fix=0, group="main"),
-    dict(bit="P00154", name="클로징 진입", station="closing", counter="R00030", D=295.0, ruler=True, first=None, n_fix=2, group="closing"),
-    dict(bit="P00164", name="오프닝 진입", station="opening", counter="R00070", D=3709.0, ruler=True, first=None, n_fix=26, group="opening"),
-    dict(bit="P00451", name="전진 진입", station="fwd", counter="R00055", D=3758.0, ruler=False, first="P00450", n_fix=26, group="md_fwd"),
-    dict(bit="P00459", name="후진 진입", station="rev", counter="R00060", D=5728.0, ruler=True, first="P00458", n_fix=41, group="md_rev"),
+    dict(bit="P00140", name="대차 진입", station="pour", counter="R00040", D=0.0, ruler=True, first="P00142", n_fix=0, group="main",
+         unit="zone", label="캐리어 진입 Check"),
+    dict(bit="P00141", name="대차 쉬프트", station="pour", counter="R00080", D=19.0, ruler=True, first=None, n_fix=0, group="main",
+         unit="zone", label="캐리어진입 쉬프트 Check"),
+    dict(bit="P00154", name="클로징 진입", station="closing", counter="R00030", D=295.0, ruler=True, first=None, n_fix=2, group="closing",
+         unit="zone", label="Closing Zone In Detect"),
+    dict(bit="P00164", name="오프닝 진입", station="opening", counter="R00070", D=3709.0, ruler=True, first=None, n_fix=26, group="opening",
+         unit="zone", label="Opening Zone In Detect"),
+    dict(bit="P00451", name="전진 진입", station="fwd", counter="R00055", D=3758.0, ruler=False, first="P00450", n_fix=26, group="md_fwd",
+         unit="md_fwd", label="전진Unit 캐리어 진입감지"),
+    dict(bit="P00459", name="후진 진입", station="rev", counter="R00060", D=5728.0, ruler=True, first="P00458", n_fix=41, group="md_rev",
+         unit="md_rev", label="후진Unit 캐리어 진입감지"),
 ]
 SENSORS = {r["bit"]: r for r in SENSOR_ROWS}
 #: 배치 분석용 표 (conv_grid · 노트북)

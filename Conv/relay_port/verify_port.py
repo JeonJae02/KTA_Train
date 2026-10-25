@@ -70,8 +70,8 @@ def main(start="2026-10-13", end="2026-10-17"):
     out = None
     for t, v in zip(df.index, df.to_numpy()):
         out = bm.read({c: x for c, x in zip(cols, v) if x == x}, now=t.tz_localize("Asia/Seoul").timestamp())
-    print(f"[백엔드 래퍼] 키 {sorted(out)} · 스테이션 {list(out['stations'])} · "
-          f"유닛 붙은 스테이션 {[k for k, s in out['stations'].items() if s['unit']]}")
+    print(f"[백엔드 래퍼] 키 {sorted(out)} · 마커 {[(k, m['kind'], m['unit']) for k, m in out['markers'].items()]} · "
+          f"대차 {len(out['wagons'])}대")
 
 
 if __name__ == "__main__":

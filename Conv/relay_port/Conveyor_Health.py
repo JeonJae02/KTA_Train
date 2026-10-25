@@ -1,5 +1,5 @@
 # tools_yeji/Conveyor_Health.py
-"""컨베이어 실시간 판정 — 코어(대차 통과 센서 6개) + 유닛(전진·후진·에어백 실린더).
+"""컨베이어 실시간 판정 — 코어(대차 통과 센서 6개) + 유닛(전진·후진·Air 주입 Unit 실린더).
 
 예전 MOCK 과 같은 자리·같은 이름이다: PredictiveHealth 가 tick 마다 ConveyorMonitor().read(live_data) 를 부른다.
 판정은 tools_yeji/conveyor_models (DB_Log/Conv 의 core_* · unit_* · conveyor_monitor 를 그대로 옮긴 것).

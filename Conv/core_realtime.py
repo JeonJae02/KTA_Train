@@ -272,7 +272,7 @@ class CoreGrid:
 
     def _build(self, J, now, lv):
         """센서별·대차별 결과. 스테이션으로 묶는 건 ConveyorMonitor 가 한다."""
-        sensors = {s: dict(name=c["name"], station=c["station"], sev=None, flags=[], cells=[]) for s, c in SENSORS.items()}
+        sensors = self._blank_sensors()
         wagons = {f"{w:02d}": dict(sev=None, items=[]) for w in range(1, N_WAGON + 1)}
         flags = {r.sensor: r.flag.split(", ") for r in lv.itertuples() if r.flag}
         for r in now.itertuples():
@@ -282,11 +282,12 @@ class CoreGrid:
             se["sev"] = max(se["sev"] or 0, sev)
             wk["sev"] = max(wk["sev"] or 0, sev)
             if sev > 0:
-                item = dict(wagon=int(r.wagon), sensor=r.sensor, sev=sev, status=SEV_NAME[sev], state=r.state,
+                item = dict(wagon=int(r.wagon), sensor=r.sensor, name=se["name"], unit=se["unit"], sev=sev,
+                            status=SEV_NAME[sev], state=r.state,
                             reason=cell_reason(r.state, r.rise_off, r.width_ex, r.rearm, r.accepted),
                             since=self._since(J, r.sensor, int(r.wagon), sev))
                 se["cells"].append(item)
-                wk["items"].append(dict(item, station=SENSORS[r.sensor]["station"]))
+                wk["items"].append(item)
         for s, fs in flags.items():
             se = sensors[s]
             for f in fs:
@@ -294,12 +295,17 @@ class CoreGrid:
             se["sev"] = max(se["sev"] or 0, 2)
         for se in sensors.values():
             se["cells"].sort(key=lambda x: (-x["sev"], x["wagon"]))
+        for wk in wagons.values():
+            wk["items"].sort(key=lambda x: -x["sev"])
         w = self.last.get(WAGON_TAG)
         return dict(ready=True, carrier=None if w is None else int(w), sensors=sensors, wagons=wagons, drive=self._speed())
 
+    @staticmethod
+    def _blank_sensors():
+        return {s: dict(name=c["label"], unit=c["unit"], sev=None, flags=[], cells=[]) for s, c in SENSORS.items()}
+
     def empty(self):
         w = self.last.get(WAGON_TAG) if hasattr(self, "last") else None
-        return dict(ready=False, carrier=None if w is None else int(w),
-                    sensors={s: dict(name=c["name"], station=c["station"], sev=None, flags=[], cells=[]) for s, c in SENSORS.items()},
+        return dict(ready=False, carrier=None if w is None else int(w), sensors=self._blank_sensors(),
                     wagons={f"{w:02d}": dict(sev=None, items=[]) for w in range(1, N_WAGON + 1)},
                     drive=dict(sev=None, status=None, reason=None))
