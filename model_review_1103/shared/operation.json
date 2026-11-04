@@ -1,0 +1,37 @@
+{
+  "version": "2026-10-15",
+  "_notes": {
+    "shifts": "근무 구간 (한국시간 HH:MM, 시각 순, 자정 전에 끝남). 휴게·중식·석식으로 나뉜 생산 구간 하나가 근무 하나. 중식·석식 때 발포는 멈추고 컨베이어만 돈다",
+    "crews": "주간조(06:50~15:30)·야간조(15:30~23:58) 2교대를 근무 구간마다 1~4조로 나눈 것 — 구간은 shifts 와 같다. 백엔드 경보 유지(shifts)와 별개로 모바일 서버 통계(직전 근무·야간 비중)가 쓴다. 형식은 HDI_Mobile_Server app/statistics/shifts.json 과 같다 — 바꾸면 그 파일도 같이 바꿀 것. crews.shifts 의 end 가 start 보다 이르면 다음날 종료, night=true 가 야간 집계 대상. rotation 은 start_date 부터 days_per_turn 일마다 pattern 의 다음 항목으로 교대 (지금은 조가 고정이라 항목 하나)"
+  },
+  "shifts": [
+    { "start": "06:50", "end": "08:50", "note": "주간조 시작" },
+    { "start": "09:00", "end": "10:50", "note": "휴게 08:50~09:00" },
+    { "start": "11:30", "end": "13:30", "note": "중식 10:50~11:30" },
+    { "start": "13:40", "end": "15:30", "note": "휴게 13:30~13:40, 교대 15:25~15:30" },
+    { "start": "15:30", "end": "17:30", "note": "야간조 시작" },
+    { "start": "17:40", "end": "19:30", "note": "휴게 17:30~17:40" },
+    { "start": "20:10", "end": "22:10", "note": "석식 19:30~20:10" },
+    { "start": "22:20", "end": "23:58", "note": "휴게 22:10~22:20" }
+  ],
+  "crews": {
+    "shifts": [
+      { "code": "DAY_1", "name": "주간", "start": "06:50", "end": "08:50", "night": false },
+      { "code": "DAY_2", "name": "주간", "start": "09:00", "end": "10:50", "night": false },
+      { "code": "DAY_3", "name": "주간", "start": "11:30", "end": "13:30", "night": false },
+      { "code": "DAY_4", "name": "주간", "start": "13:40", "end": "15:30", "night": false },
+      { "code": "NIGHT_1", "name": "야간", "start": "15:30", "end": "17:30", "night": true },
+      { "code": "NIGHT_2", "name": "야간", "start": "17:40", "end": "19:30", "night": true },
+      { "code": "NIGHT_3", "name": "야간", "start": "20:10", "end": "22:10", "night": true },
+      { "code": "NIGHT_4", "name": "야간", "start": "22:20", "end": "23:58", "night": true }
+    ],
+    "rotation": {
+      "start_date": "2026-10-15",
+      "days_per_turn": 1,
+      "pattern": [
+        { "DAY_1": "1", "DAY_2": "2", "DAY_3": "3", "DAY_4": "4",
+          "NIGHT_1": "1", "NIGHT_2": "2", "NIGHT_3": "3", "NIGHT_4": "4" }
+      ]
+    }
+  }
+}
