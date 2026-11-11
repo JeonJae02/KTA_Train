@@ -1,0 +1,6 @@
+﻿incident_id,domain,작업일,start_dt,device_key,model_scope,expected_reasons,설비상세,조치,작업IDs,cm,matched_episodes,match_level,lead_h,feature_shift,shift_time_ok,missed_feature,meaning_gap,reviewer,note
+C01,conveyor,2026-10-17,2026-10-17 09:30:00,CONVEYOR,애매,wagon_* (대차 28),캐리어(28번) 에어 누수,리미트 스위치 점검 및 점검,X-029,,,,,,,,,,
+C02,conveyor,2026-10-26,2026-10-26 11:00:00,CONVEYOR,애매,wagon_* (대차 18),캐리어 ( 18번 LH ),에어누수로 인한 에어백점검 및 확인,G-02-003,,,,,,,,,,
+C03,conveyor,2026-10-31,2026-10-31 12:00:00,CONVEYOR,예,sensor_rearm;sensor_shift;wagon_rearm;wagon_debris_*;air_time_slow (P00451·md_fwd),40~4번 대차 중형 전진 센서 에러 / 중형 전진 에어주입장치 센서 에러 / 2라인 중형 전진 대차번호 이상 에러 6회 발생; 2라인 기존 센서 및 브라켓 위치 조정 → 라인 정상동작,점검 / 기존 센서 및 브라켓 위치 조정,G-02-018;G-02-021;M-02-04-2-3,,,,,,,,,,
+C04,conveyor,2026-10-31,2026-10-31 09:00:00,CONVEYOR,애매,drive_speed (같은 구동계라면),오버헤드 행거 에러,체인 텐션 점검 및 조치,G-02-017,,,,,,,,,,
+C05,conveyor,2026-11-03,2026-11-03 17:00:00,CONVEYOR,애매,drive_speed (같은 구동계라면),행거 이송장치 구동부 쪽 체인 이탈로 라인 스톱; 동일 현상으로 라인 스톱; 라인별 부분생산; 수리완료 정상가동,수리(세부 조치 미기재),M-02-02-2-5,,,,,,,,,,

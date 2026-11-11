@@ -1,0 +1,21 @@
+작업ID,incident_id,domain,device_key,sub_unit,wagon_no,model_scope,expected_reasons,map_note
+X-029,C01,conveyor,CONVEYOR,wagon,28,애매,wagon_* (대차 28),캐리어 에어 누수. 대차별 판정은 통과 위치·이물을 본다. 에어백 누수를 직접 보는 지표는 없음
+G-02-003,C02,conveyor,CONVEYOR,wagon,18,애매,wagon_* (대차 18),캐리어 18번 LH 에어백 누수. C01과 같은 종류
+G-02-018,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;wagon_debris_*;air_time_slow (P00451·md_fwd),"40~4번 대차 중형 전진 센서 에러. 중형 전진 = md_fwd(전진 Unit, P00451)"
+G-02-021,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;air_time_slow (P00451·md_fwd),같은 날 같은 증상 — C03으로 묶음
+M-02-04-2-3,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_shift;sensor_rearm (P00451),"기계실 기록. 센서·브라켓 위치 조정 → sensor_shift가 가장 직접적. 공무반 G-02-018·021과 같은 사건으로 묶음(시각 확인 필요)"
+G-02-017,C04,conveyor,CONVEYOR,hanger,,애매,drive_speed (같은 구동계라면),"오버헤드 행거 체인 텐션. 행거 이송장치가 우리 대차 체인 컨베이어와 같은 구동계인지 확인 필요. 라인 미기재"
+M-02-02-2-5,C05,conveyor,CONVEYOR,hanger,,애매,drive_speed (같은 구동계라면),"행거 구동부 체인 이탈, 라인 스톱 2회. C04(10/31 체인 텐션)의 재발 가능성. 라인 미기재"
+G-01-006,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),"1-2 POL 매터링 펌프 압력 안 걸림 → 교체. 1-2 POL = HD1 slot2 = P2(1-2펌프 CUSH). 일지 원료명 ST-242와 우리 원료표(AM-315) 대응 확인 필요"
+M-01-02-2,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),기계실 기록. 공무반 G-01-006과 같은 사건(중복의심=예)
+M-01-02-3-2,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),"4번 헤드 POL IN/OUT 호스 누수 → 교체. 원문 24:40 = 10/20 00:40. HD4 POL = P7(4펌프 CUSH)"
+G-01-010,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),공무반 기록. 기계실 M-01-02-3-2와 같은 사건(중복의심=예)
+G-02-004,P03,pump,HEAD_HD4,,,애매,injection_time (HD4);pump_head_resistance_* (P7·I7),"믹싱헤드 4번 유압유 누수 → 샤프트몸통 오링·하우징볼트 교체. 유압 계통은 원료 압력과 별개라 펌프 지표에 안 보일 수 있음"
+M-02-05-2,P04,pump,PUMP_P7|PUMP_I7|HEAD_HD4,,,애매,pump_head_resistance_*;pump_line_resistance_* (P7·I7),4번 헤드 인젝션 OUT 니플 교체. POL·ISO 어느 쪽 니플인지 미기재
+X-024,E01,etc,온조기_10,,,애매,(없음 — 온조기 태그 미수집 추정),"온조기(10번) 히터 고장 점검. 온조기는 topology에 없음 → 우리 탱크 모델 대상인지, 별도 설비인지 확인 필요"
+X-027,E01,etc,온조기_10,,,애매,(없음),같은 날 히터 교체 — E01로 묶음
+G-02-016,E02,etc,온조기_1,,,애매,(없음),온조기(1번) TR 고장 점검
+G-02-023,E02,etc,온조기_1,,,애매,(없음),같은 날 TR 교체 — E02로 묶음
+G-02-030,E03,etc,온조기_1,,,애매,(없음),"온조기(1번) 펌프 누수 점검. E02(10/31 TR) 이틀 뒤 같은 장비"
+G-02-033,E03,etc,온조기_1,,,애매,(없음),같은 날 온조기 교체 — E03으로 묶음
+G-02-038,E04,etc,온조기_SP,,,애매,(없음),S/P 온조기 펌프 누수 → 펌프 교체. S/P가 무엇인지 확인 필요

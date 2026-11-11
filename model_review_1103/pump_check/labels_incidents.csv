@@ -1,0 +1,5 @@
+﻿incident_id,domain,작업일,start_dt,device_key,model_scope,expected_reasons,설비상세,조치,작업IDs,cm,matched_episodes,match_level,lead_h,feature_shift,shift_time_ok,missed_feature,meaning_gap,reviewer,note
+P01,pump,2026-10-19,2026-10-19 06:00:00,PUMP_P2|HEAD_HD1,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),1-2 ST-242 POL 매터링 펌프 압력 안 걸림 / 발포2라인 1-2POL 펌프 압력안걸림으로 인한 펌프 교체,펌프 교체,G-01-006;M-01-02-2,,,,,,,,,,
+P02,pump,2026-10-19,2026-10-20 00:10:00,PUMP_P7|HEAD_HD4,예,pump_line_resistance_low;pump_head_resistance_low (P7),"4번 헤드 POL IN, OUT 호스 터짐 / 발포2라인 4번헤드 POLYOL IN,OUT 호스 누수로 교체",호스 교체,G-01-010;M-01-02-3-2,,,,,,,,,,
+P03,pump,2026-10-27,2026-10-27 10:40:00,HEAD_HD4,애매,injection_time (HD4);pump_head_resistance_* (P7·I7),믹싱헤드 4번 ( 유압유누수 ),믹싱헤드 샤프트몸통 오링교체 및 하우징볼트교체,G-02-004,,,,,,,,,,
+P04,pump,2026-10-29,2026-10-29 19:40:00,PUMP_P7|PUMP_I7|HEAD_HD4,애매,pump_head_resistance_*;pump_line_resistance_* (P7·I7),발포 2라인 4번 헤드 인젝션 OUT 니플 교체,니플 교체,M-02-05-2,,,,,,,,,,
