@@ -27,12 +27,14 @@ def _get_extractor():
     return _extractor
 
 
-def model_tags(domain):
+def model_tags(domain, version="v2.1"):
     """운영 모델이 실제로 읽는 태그 목록 (backend 코드에서 뽑는다).
 
     domain: 'pump' (펌프 90 + 헤드 21), 'conveyor' (46), 'tank' (40). 가동 플래그는 항상 포함.
+    v2.1 · v2.2 의 태그 집합은 같다 (컨베이어 46개 확인).
     """
-    sys.path.insert(0, str(paths.BACKEND))
+    from . import backend
+    backend.use(version)
     with redirect_stdout(StringIO()):           # backend 로더의 로드 메시지를 숨긴다
         from config.operation_config import RUN_FLAG_TAG
         if domain == "pump":

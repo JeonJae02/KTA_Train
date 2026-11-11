@@ -65,15 +65,18 @@ TP로 적으려면 경고가 떴다는 것만으로는 부족하다. **우리 �
 model_review_1103/
 ├── CM_검토_설계.md            ← 이 문서
 ├── 모델검토_계획.md · 모델_알고리즘_정리.md
-├── backend/ · shared/         운영 코드·설정 복사본 — 고치지 않는다
+├── backend/ · shared/         운영 코드·설정 v2.1 (HDI_Relay cd73ba2) — 고치지 않는다
+├── v2_2_1/backend · shared/   운영 코드·설정 v2.2 (HDI_Relay bcaad9a) — 고치지 않는다
+│                              data/ 에 컨베이어 가동일 기록 (09-10 ~ 11-05, 10-20 ~ 25 공백)
 │
 ├── review_lib/                공통 코드 (세 노트북이 같이 쓴다)
-│   ├── paths.py               경로, 검토 기간, 모델별 경고 시작일(MODEL_LIVE)
+│   ├── paths.py               경로, 검토 기간, 모델별 경고 시작일(MODEL_LIVE), 모델 버전 구간(MODEL_VERSIONS)
+│   ├── backend.py             backend 버전 고르기 — backend.use("v2.1" | "v2.2")
 │   ├── actions.py             일지 xlsx 읽기, 기록시간 파싱
 │   ├── warnings_log.py        경고 로그 → 이벤트·에피소드, 설비키·컨베이어 유닛·대차번호 매핑
 │   ├── match.py               사건↔경고 후보, 라벨 파일 동기화, 혼동행렬 집계
 │   ├── db.py                  InfluxDB 추출 (하루 단위 캐시), 모델 입력 태그 목록
-│   ├── replay.py              운영 모델 재생 → 사이클별 피처 (현재 펌프만)
+│   ├── replay.py              운영 모델 재생 — 펌프 사이클 피처, 컨베이어 통과·판정·유닛 사이클
 │   └── plot.py                경고·조치 타임라인, 조치 전후 원시 태그
 │
 ├── warning/
@@ -89,6 +92,8 @@ model_review_1103/
 │       └── warning_episodes.csv   경고 한 건 = 한 행 (생성)
 │
 ├── con_check/   con_check.ipynb   labels_incidents.csv  labels_episodes.csv  figs/
+│                C01_캐리어28.ipynb …  사건별 근거 노트북
+│                cases/C01.md …        사건별 정리 (일지 → 데이터 → 모델 → 의미 비교 → 피처 → 판정 → 현장 확인)
 ├── pump_check/  pump_check.ipynb  (같은 구성)
 ├── etc_check/   etc_check.ipynb   (같은 구성)
 └── cache/raw/<group>/<날짜>.pkl.xz   DB 추출 캐시 (git 제외)
@@ -156,13 +161,30 @@ model_review_1103/
 | 탱크 (릴레이) | 10-19 06:50 | 15 | etc_check |
 | 컨베이어 | **10-26 06:19** | 127 | con_check |
 
+**모델 버전 — 11-06 17:25 KST에 컨베이어가 v2.2로 바뀌었다.** 경고 로그 형식이 바뀐 시각이다.
+
+| | v2.1 (~ 11-06 17:25) | v2.2 (11-06 17:25 ~) |
+|---|---|---|
+| 컨베이어 경고 키 | 유닛 하나에 지표 전부 (`md_fwd`, `airbag`, `drive`) | 부위 단위 — 실린더 SOL 주소(`P00470`, `P0028A`), 주소 없는 부위는 `CONVEYOR_MD_FWD:slide_sensor`, `CONVEYOR:drive` |
+| topology | 컨베이어 device 1개 | device 4개 (CONVEYOR · MD_FWD · MD_REV · AIRBAG) × group 9개 (carrier_sensor, slide_sensor, stopper_rod, nozzle_rod …) |
+| 판정 규칙·기준값 | 같음 (코어 판정, 유닛 UNIT_REF 그대로) | 같음 |
+| 펌프·탱크·헤드 | 같음 | 같음 |
+
+- `warning_episodes.csv`는 두 버전 경고를 같은 부위 체계로 읽는다(`model_ver`, `part_device`, `part_group` 열). v2.1 유닛 경고는 사유의 지표 이름으로 부위를 매긴다.
+- **컨베이어 가동일 기록은 10-20 ~ 10-25가 비어 있다.** 씨앗이 10-19까지이고, 실시간 누적은 10-26부터다. 그 사이에는 모델이 돌지 않았다. 이 공백 때문에 10-26에 이미 해소된 상태가 이어받아진 사례가 있다(C01의 W0073).
+
 ### 4-3. 원시 데이터와 재생 — 피처 확인
 
 경고 로그에는 상태 변화만 남는다. 피처가 언제 얼마나 움직였는지는 DB에서 원시값을 뽑아 운영 모델에 다시 흘려야 보인다.
 
 - **추출**: `db.fetch_range(start, end, db.model_tags("pump"), group="pump")`. 운영 모델이 읽는 태그만 하루 단위로 뽑아 `cache/raw/`에 저장한다. 펌프 하루치는 112태그, 약 17만 행, 1분, 3MB다. **현장 DB이므로** 넓은 구간을 한 번에 뽑지 않는다.
 - **펌프 재생**: `replay.pump_cycles(raw, pumps=[...])`. 사이클마다 점수, 판정 모드, 피처 8개의 정규화 값(`zn_pump_resid` `zn_r_phys` `zn_t_self` `zn_decel_half_sec` `zn_release_half_sec` `zn_ft_cv` `zn_pt_std` `zn_P0`)이 나온다. 창 판정이 비지 않도록 보고 싶은 시각보다 반나절 이상 앞에서 시작한다.
-- **컨베이어·탱크 재생**은 아직 헬퍼가 없다. 방법은 각 노트북 4절에 적어 두었다.
+- **컨베이어 재생**: `replay.conveyor_core(raw, history=…, units=("md_fwd", "md_rev"))`. 결과는 세 가지다.
+  - 통과 하나 = 한 행인 표: 시각, 센서, 대차, 앞 끝 위치, 켜짐 길이, 재감지 수
+  - 주기마다 모델 화면에 떴을 판정
+  - 유닛 사이클 값
+  `history`에는 가동일 기록 중 재생 시작일 전 날만 넘긴다. 재생 결과는 기록 파일과 맞는다(C01에서 검증). `replay.attach_wagon()`은 유닛 사이클에 대차 번호를 붙인다.
+- **탱크 재생**은 아직 헬퍼가 없다. 방법은 etc 노트북 4절에 있다.
 
 ## 5. 작업 흐름
 
@@ -237,7 +259,7 @@ P01(10-19 06:00, 1-2 POL 펌프 "압력 안 걸림" → 펌프 교체)에 대해
 | 1 | 짝짓기 시간창 7일 / 사후 24시간 | 선행 시간 분포를 보고 정한다 | 회의 |
 | 2 | 온조기(E01–E04)가 우리 모델 대상인가 | topology에 없다. 태그가 없으면 `OUT`(모델 확장 후보) | 현장·PLC |
 | 3 | 오버헤드 행거(C04·C05)가 대차 체인 컨베이어와 같은 구동계인가 | 같다면 `drive_speed`가 떴어야 한다 | 현장 |
-| 4 | 일지의 "1-2 POL ST-242"가 P2(1-2펌프 CUSH)가 맞는가 | 원료명이 우리 원료표(AM-315)와 다르다 | 현장 |
+| 4 | ~~일지의 원료명 확인~~ | **일지 원료명이 맞다(11-11 확인).** 우리 `pump_settings` 원료명이 다르면 설정 쪽을 고친다 | — |
 | 5 | "중형 전진" = md_fwd(전진 Unit, P00451)인가 | C03 판정의 전제다 | 현장 |
 | 6 | M-02-04-2-3(10-31 중형 전진 대차번호 에러)의 시각 | 기록시간이 비어 있어 C03 시작은 공무반 시각(12:00)으로 잡았다 | 일지 원문 |
 | 7 | 4번 헤드 인젝션 OUT 니플(P04)이 POL 쪽인가 ISO 쪽인가 | P7과 I7 중 어느 경고와 짝지을지 정해야 한다 | 현장 |

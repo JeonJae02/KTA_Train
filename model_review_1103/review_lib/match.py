@@ -70,9 +70,10 @@ def _keys(s):
     return set(str(s).split("|")) if pd.notna(s) else set()
 
 
-def _same_num(a, b):
+def _in_wagons(no, nos):
+    """사건 대차 번호가 경고에 나온 대차 목록('2;3;28')에 있는가."""
     try:
-        return pd.notna(a) and pd.notna(b) and int(float(a)) == int(float(b))
+        return pd.notna(no) and pd.notna(nos) and str(int(float(no))) in str(nos).split(";")
     except (TypeError, ValueError):
         return False
 
@@ -112,13 +113,15 @@ def candidates(inc, ep, before=BEFORE, after=AFTER):
                 "act_sub_unit": r["sub_unit"], "act_wagon": r["wagon_no"],
                 # 컨베이어는 키가 전부 CONVEYOR 라 이 두 칸으로 좁혀 본다
                 "same_unit": pd.notna(r["sub_unit"]) and str(e.get("sub_unit")) == str(r["sub_unit"]),
-                "same_wagon": _same_num(e.get("wagon_no"), r["wagon_no"]),
+                "same_wagon": _in_wagons(r["wagon_no"], e.get("wagon_nos")),
+                "ep_part": f"{e.get('part_device')}:{e.get('part_group')}", "model_ver": e.get("model_ver"),
                 "reasons": e["reasons"], "max_level": e["max_level"], "max_sev": e.get("max_sev"),
                 "message_first": e["message_first"],
                 "expected_reasons": r["expected_reasons"],
             })
     cols = ["incident_id", "episode_id", "match_on", "action_start", "onset", "last_detected", "lead_h", "phase",
             "ep_key", "ep_sub_unit", "ep_wagon", "act_sub_unit", "act_wagon", "same_unit", "same_wagon",
+            "ep_part", "model_ver",
             "reasons", "max_level", "max_sev", "message_first", "expected_reasons"]
     return pd.DataFrame(rows, columns=cols)
 

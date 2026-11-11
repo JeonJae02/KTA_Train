@@ -45,16 +45,22 @@ def load_events(jsonl_dir=None):
     df = df.drop_duplicates(subset=dedup_cols).reset_index(drop=True)
     for c in _TS_COLS:
         df[c] = _to_kst(df[c])
+    df["model_ver"] = df["ts"].map(paths.version_at)
     df["domain"] = df.apply(domain_of, axis=1)
     df["device_key"] = df.apply(device_key_of, axis=1)
     df["sub_unit"] = df.apply(sub_unit_of, axis=1)
-    df["wagon_no"] = df["message"].map(wagon_no_of)
+    part = df.apply(lambda r: conv_part(r) if r["kind"] == "conveyor" else (None, None), axis=1)
+    df["part_device"], df["part_group"] = part.str[0], part.str[1]
+    df["wagon_nos"] = df["message"].map(wagon_nos_of)
+    df["wagon_no"] = df["wagon_nos"].map(lambda s: int(s.split(";")[0]) if isinstance(s, str) else None)
     return df.sort_values("ts").reset_index(drop=True)
 
 
 # ---------------------------------------------------------------- 설비 매핑
 def _topology():
-    with open(paths.ROOT / "shared" / "topology.json", encoding="utf-8") as fh:
+    # v2.2 topology 는 v2.1 의 상위집합이다 (컨베이어 부위 주소 39개를 device·group 으로 세분화).
+    # 두 버전 경고를 같은 부위 체계로 읽으려고 새 것을 쓴다.
+    with open(paths.MODEL_VERSIONS["v2.2"]["shared"] / "topology.json", encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -86,35 +92,69 @@ def device_key_of(r):
     return "CONVEYOR"
 
 
-_CONV_UNIT_BY_REASON = {"drive_speed": "drive"}
-_CONV_UNIT_BY_KEY = {
-    "P00451": "md_fwd", "P00451:wagons": "md_fwd", "md_fwd": "md_fwd", "CONVEYOR_MD_FWD:slide_sensor": "md_fwd",
-    "P00459:wagons": "md_rev", "md_rev": "md_rev", "CONVEYOR_MD_REV:slide_sensor": "md_rev",
-    "P00474": "md_rev", "P00470": "md_fwd",
-    "airbag": "airbag", "P0028A": "airbag", "P0028B": "airbag",
-    "P00140:wagons": "zone", "P00141:wagons": "zone",
-    "P00154:wagons": "closing", "P00164:wagons": "opening",
-    "drive": "drive", "CONVEYOR:drive": "drive",
+#: 컨베이어 device → 세부 위치 이름 (일지 매핑용 짧은 이름)
+_DEVICE_UNIT = {"CONVEYOR_MD_FWD": "md_fwd", "CONVEYOR_MD_REV": "md_rev", "CONVEYOR_AIRBAG": "airbag"}
+#: device=CONVEYOR 인 코어 센서 → 위치
+_CORE_SENSOR_UNIT = {"P00140": "zone", "P00141": "zone", "P00154": "closing", "P00164": "opening"}
+#: v2.1 유닛 경고 키 (유닛 하나에 지표 전부) → device
+_OLD_UNIT_DEVICE = {"md_fwd": "CONVEYOR_MD_FWD", "md_rev": "CONVEYOR_MD_REV", "airbag": "CONVEYOR_AIRBAG"}
+#: 유닛 지표 → 부위 group. v2.2 unit_params.METRIC_PART 와 같은 규칙 (실린더 시간은 그 SOL, 거리·에어 시간은 이동대 센서 묶음).
+#: v2.1 경고(키 md_fwd 등)도 사유의 지표 이름으로 같은 부위를 매겨서 두 버전을 나란히 비교한다.
+_METRIC_GROUP = {
+    "stop_fwd_start": "stopper_rod", "stop_fwd_time": "stopper_rod",
+    "stop_rev_start": "stopper_rod", "stop_rev_time": "stopper_rod",
+    "nozzle_fwd_start": "nozzle_rod", "nozzle_rev_time": "nozzle_rod", "return_time": "slide_rod",
+    "air_time": "slide_sensor", "catch_cnt": "slide_sensor", "drag_cnt": "slide_sensor",
 }
+_TAILS = ("_slow", "_fast", "_distance", "_trend")
+
+
+def _metric_of(reason):
+    m = reason or ""
+    for t in _TAILS:
+        if m.endswith(t):
+            m = m[: -len(t)]
+    return re.sub(r"_\d$", "", m)         # nozzle_rev_time_1 → nozzle_rev_time
+
+
+def conv_part(r):
+    """컨베이어 경고 → (device, group). v2.1·v2.2 키 형식을 같은 부위 체계로."""
+    key, reason = r["key"], r["reason"]
+    base = key.split(":")[0]
+    if key.endswith(":wagons"):                      # 대차 묶음 — 그 대차를 본 센서
+        return _RELAYS.get(base, {}).get("deviceId", "CONVEYOR"), "wagon"
+    if reason == "drive_speed":
+        return "CONVEYOR", "drive"
+    if base in _RELAYS:                              # v2.2 부위 주소 (센서 또는 SOL)
+        return _RELAYS[base]["deviceId"], _RELAYS[base]["groupId"]
+    if ":" in key:                                   # v2.2 주소 없는 부위 {device}:{group}
+        return tuple(key.split(":", 1))
+    if base in _OLD_UNIT_DEVICE:                     # v2.1 유닛 키
+        return _OLD_UNIT_DEVICE[base], _METRIC_GROUP.get(_metric_of(reason))
+    return "CONVEYOR", None
 
 
 def sub_unit_of(r):
-    """컨베이어 세부 위치 (zone/closing/opening/md_fwd/md_rev/airbag/drive). 그 외는 빈칸.
-
-    릴레이 주소 → 유닛은 conveyor_models/unit_params.py UNITS 의 *_sol 정의,
-    센서 비트 → 위치는 core_params.py 센서 정의를 따랐다.
-    """
+    """컨베이어 세부 위치 (zone/closing/opening/md_fwd/md_rev/airbag/drive). 그 외는 빈칸."""
     if r["kind"] != "conveyor":
         return None
-    return _CONV_UNIT_BY_KEY.get(r["key"]) or _CONV_UNIT_BY_REASON.get(r["reason"])
+    dev, grp = conv_part(r)
+    if grp == "drive":
+        return "drive"
+    if dev in _DEVICE_UNIT:
+        return _DEVICE_UNIT[dev]
+    return _CORE_SENSOR_UNIT.get(r["key"].split(":")[0])
 
 
-_WAGON_RE = re.compile(r"대차\s*(\d+)")
+_WAGON_RE = re.compile(r"대차\s*([\d·]+)")
 
 
-def wagon_no_of(msg):
+def wagon_nos_of(msg):
+    """'대차 02·03: …' / '… 대차 11: …' → '2;3' (대차 묶음 경고는 여러 대). 없으면 None."""
     m = _WAGON_RE.search(msg or "")
-    return int(m.group(1)) if m else None
+    if not m:
+        return None
+    return ";".join(str(int(x)) for x in m.group(1).split("·") if x)
 
 
 # ---------------------------------------------------------------- 에피소드
@@ -136,6 +176,10 @@ def build_episodes(ev):
             "device_key": x["device_key"].iloc[0],
             "sub_unit": x["sub_unit"].dropna().iloc[0] if x["sub_unit"].notna().any() else None,
             "wagon_no": x["wagon_no"].dropna().iloc[0] if x["wagon_no"].notna().any() else None,
+            "wagon_nos": ";".join(sorted({w for s in x["wagon_nos"].dropna() for w in s.split(";")}, key=int)) or None,
+            "model_ver": x["model_ver"].iloc[0],
+            "part_device": x["part_device"].iloc[0],
+            "part_group": ";".join(dict.fromkeys(x["part_group"].dropna())) or None,
             "reason_first": reasons[0] if reasons else None,
             "reasons": ";".join(reasons),
             "message_first": x["message"].iloc[0],

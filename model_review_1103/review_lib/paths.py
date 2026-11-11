@@ -5,7 +5,24 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]          # model_review_1103/
 DB_LOG = ROOT.parent                                # DB_Log/ (.env, venv, Log_Extractor.py)
-BACKEND = ROOT / "backend"                          # 운영 코드 복사본 — 읽기 전용
+BACKEND = ROOT / "backend"                          # 운영 코드 복사본 v2.1.x — 읽기 전용
+
+#: 운영 모델 버전. 엣지 경고 로그의 형식이 바뀐 시각으로 구간을 나눈다 (11-06 17:25 KST 부터 v2.2).
+#: 바뀐 것은 컨베이어(부위 단위 경고 키·topology 세분화)뿐이고 펌프·탱크·헤드 코드와 펌프 가중치는 같다.
+#: 각 backend 는 자기 옆 shared/ 의 topology·근무표를 읽는다.
+MODEL_VERSIONS = {
+    "v2.1": dict(backend=ROOT / "backend", shared=ROOT / "shared",
+                 commit="HDI_Relay cd73ba2 (v2.1.2, 10-26)",
+                 start=pd.Timestamp("2026-10-15"), end=pd.Timestamp("2026-11-06 17:25")),
+    "v2.2": dict(backend=ROOT / "v2_2_1" / "backend", shared=ROOT / "v2_2_1" / "shared",
+                 commit="HDI_Relay bcaad9a (v2.2.1, 11-06)",
+                 start=pd.Timestamp("2026-11-06 17:25"), end=None),
+}
+
+
+def version_at(t):
+    """그 시각에 엣지에서 돌던 모델 버전."""
+    return "v2.2" if pd.Timestamp(t) >= MODEL_VERSIONS["v2.2"]["start"] else "v2.1"
 
 WARNING_DIR = ROOT / "warning"
 FILTERING_XLSX = WARNING_DIR / "filtering.xlsx"     # 실무자 일지 원본 — 읽기 전용

@@ -1,0 +1,115 @@
+{
+ "pump": "I7",
+ "material": "ISO",
+ "r": 0.25204613095238093,
+ "pump_coef": [
+  0.2769669798546677,
+  -0.0017416581836906689
+ ],
+ "pt_coef": [
+  2.0484683394768926,
+  0.00477275356075796,
+  4.080754305308566e-05
+ ],
+ "circ_coef": [
+  0.27618854165955786,
+  -0.002094213109494967
+ ],
+ "circ_hz": 3000.0,
+ "fitted_on": {
+  "n_cycles": 33253,
+  "n_outliers": 1157,
+  "n_pt_cycles": 12859,
+  "n_pt_outliers": 93,
+  "start": "2026-09-10 06:51:14.259179",
+  "end": "2026-10-03 23:56:04.574709",
+  "T_range": [
+   19.6,
+   21.9
+  ],
+  "settings_version": "2026-10-07",
+  "material_name": "ISO-GENERIC",
+  "created": "2026-10-08T16:16:33",
+  "generated_by": "baseline/make_baselines.py",
+  "steady_src": "shot",
+  "hz_levels": "all",
+  "split": {
+   "val_start": "2026-09-28",
+   "test_start": "2026-10-05"
+  },
+  "exclude_days": [
+   "2026-09-27"
+  ],
+  "events": [],
+  "pump_fit": {
+   "start": "2026-09-10 06:51:14.259179",
+   "end": "2026-10-03 23:56:04.574709",
+   "n": 33253
+  },
+  "pt_fit": {
+   "rule": "manual",
+   "run": null,
+   "level_pct": 1.56,
+   "healthy_days": [
+    "2026-09-23",
+    "2026-09-28",
+    "2026-09-29",
+    "2026-09-30",
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-03"
+   ],
+   "excluded_days": [
+    "2026-09-10",
+    "2026-09-11",
+    "2026-09-12",
+    "2026-09-14",
+    "2026-09-15",
+    "2026-09-16",
+    "2026-09-17",
+    "2026-09-18",
+    "2026-09-19",
+    "2026-09-21",
+    "2026-09-22"
+   ],
+   "n_hours_dropped": 2,
+   "n": 12859,
+   "params": {
+    "RUN_RANGE": 4.0,
+    "DAY_BAND": 3.0,
+    "HOUR_BAND": 5.0
+   }
+  },
+  "circ_fit": {
+   "n_windows": 3864
+  },
+  "material_verified": false,
+  "review": "수동 지정 — 9/23 이후 안정 상태. 그 전 톱니(드리프트) 구간은 이상으로 잡힌다",
+  "eval": {
+   "train": {
+    "n": 22014,
+    "pump_resid_med": -0.016,
+    "pump_resid_spread": 0.577,
+    "r_phys_med": 0.9086,
+    "r_phys_spread": 0.0775,
+    "circ_resid_med": -0.009
+   },
+   "val": {
+    "n": 11239,
+    "pump_resid_med": 0.216,
+    "pump_resid_spread": 0.465,
+    "r_phys_med": 1.0008,
+    "r_phys_spread": 0.0091,
+    "circ_resid_med": -0.144
+   },
+   "test": {
+    "n": 5105,
+    "pump_resid_med": 0.077,
+    "pump_resid_spread": 0.501,
+    "r_phys_med": 0.9877,
+    "r_phys_spread": 0.0952,
+    "circ_resid_med": -0.083
+   }
+  }
+ }
+}

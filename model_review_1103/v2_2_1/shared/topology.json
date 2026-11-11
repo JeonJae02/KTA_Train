@@ -1,0 +1,2357 @@
+{
+  "version": "2026-08-14T00:00:00.000Z",
+  "_notes": {
+    "devices": "{ 디바이스ID, 디바이스종류, 디바이스명, 보전파트에서의 연결디바이스 }",
+    "groups": "디바이스 종류: {부품1, 부품2,...}",
+    "groupNames": "주소가 없는 부위의 표시 이름. groupId: 부품명(사용자 확인)",
+    "relays": "릴레이주소: {디바이스ID, 부품 위치 특정(FE 확인), 부품명(사용자 확인)}"
+  },
+  "devices": [
+    {
+      "id": "HEAD_HD1",
+      "type": "head",
+      "name": "HD 1",
+      "relatedDeviceIds": []
+    },
+    {
+      "id": "HEAD_HD2",
+      "type": "head",
+      "name": "HD 2",
+      "relatedDeviceIds": []
+    },
+    {
+      "id": "HEAD_HD3",
+      "type": "head",
+      "name": "HD 3",
+      "relatedDeviceIds": []
+    },
+    {
+      "id": "HEAD_HD4",
+      "type": "head",
+      "name": "HD 4",
+      "relatedDeviceIds": []
+    },
+    {
+      "id": "PUMP_P1",
+      "type": "pump",
+      "name": "1펌프 BACK",
+      "relatedDeviceIds": [
+        "TANK_P1"
+      ]
+    },
+    {
+      "id": "PUMP_P2",
+      "type": "pump",
+      "name": "1-2펌프 CUSH",
+      "relatedDeviceIds": [
+        "TANK_P5"
+      ]
+    },
+    {
+      "id": "PUMP_P3",
+      "type": "pump",
+      "name": "2-1펌프 SOFT",
+      "relatedDeviceIds": [
+        "TANK_P2"
+      ]
+    },
+    {
+      "id": "PUMP_P4",
+      "type": "pump",
+      "name": "2-2펌프 HARD",
+      "relatedDeviceIds": [
+        "TANK_P4"
+      ]
+    },
+    {
+      "id": "PUMP_P5",
+      "type": "pump",
+      "name": "3펌프 고탄성",
+      "relatedDeviceIds": [
+        "TANK_P3"
+      ]
+    },
+    {
+      "id": "PUMP_P6",
+      "type": "pump",
+      "name": "3-2펌프 BACK",
+      "relatedDeviceIds": [
+        "TANK_P1"
+      ]
+    },
+    {
+      "id": "PUMP_P7",
+      "type": "pump",
+      "name": "4펌프 CUSH",
+      "relatedDeviceIds": [
+        "TANK_P5"
+      ]
+    },
+    {
+      "id": "PUMP_I1",
+      "type": "pump",
+      "name": "1펌프 ISO",
+      "relatedDeviceIds": [
+        "TANK_I1"
+      ]
+    },
+    {
+      "id": "PUMP_I2",
+      "type": "pump",
+      "name": "1-2펌프 ISO",
+      "relatedDeviceIds": [
+        "TANK_I3"
+      ]
+    },
+    {
+      "id": "PUMP_I3",
+      "type": "pump",
+      "name": "2-1펌프 MDI",
+      "relatedDeviceIds": [
+        "TANK_I2"
+      ]
+    },
+    {
+      "id": "PUMP_I4",
+      "type": "pump",
+      "name": "2-2펌프 MDI",
+      "relatedDeviceIds": [
+        "TANK_I2"
+      ]
+    },
+    {
+      "id": "PUMP_I5",
+      "type": "pump",
+      "name": "3펌프 ISO",
+      "relatedDeviceIds": [
+        "TANK_I3"
+      ]
+    },
+    {
+      "id": "PUMP_I6",
+      "type": "pump",
+      "name": "3-2펌프 ISO",
+      "relatedDeviceIds": [
+        "TANK_I1"
+      ]
+    },
+    {
+      "id": "PUMP_I7",
+      "type": "pump",
+      "name": "4펌프 ISO",
+      "relatedDeviceIds": [
+        "TANK_I3"
+      ]
+    },
+    {
+      "id": "TANK_P1",
+      "type": "tank",
+      "name": "Tank 1 BACK",
+      "relatedDeviceIds": [
+        "PUMP_P1",
+        "PUMP_P6"
+      ]
+    },
+    {
+      "id": "TANK_P2",
+      "type": "tank",
+      "name": "Tank 2-1 SOFT",
+      "relatedDeviceIds": [
+        "PUMP_P3"
+      ]
+    },
+    {
+      "id": "TANK_P3",
+      "type": "tank",
+      "name": "Tank 3-1 고탄성",
+      "relatedDeviceIds": [
+        "PUMP_P5"
+      ]
+    },
+    {
+      "id": "TANK_P4",
+      "type": "tank",
+      "name": "Tank 2-2 HARD",
+      "relatedDeviceIds": [
+        "PUMP_P4"
+      ]
+    },
+    {
+      "id": "TANK_P5",
+      "type": "tank",
+      "name": "Tank 3-2 CUSH",
+      "relatedDeviceIds": [
+        "PUMP_P2",
+        "PUMP_P7"
+      ]
+    },
+    {
+      "id": "TANK_I1",
+      "type": "tank",
+      "name": "Tank 1 ISO",
+      "relatedDeviceIds": [
+        "PUMP_I1",
+        "PUMP_I6"
+      ]
+    },
+    {
+      "id": "TANK_I2",
+      "type": "tank",
+      "name": "Tank 2-2 MDI",
+      "relatedDeviceIds": [
+        "PUMP_I3",
+        "PUMP_I4"
+      ]
+    },
+    {
+      "id": "TANK_I3",
+      "type": "tank",
+      "name": "Tank 3 ISO",
+      "relatedDeviceIds": [
+        "PUMP_I2",
+        "PUMP_I5",
+        "PUMP_I7"
+      ]
+    },
+    {
+      "id": "CONVEYOR",
+      "type": "conveyor",
+      "name": "컨베이어 벨트",
+      "relatedDeviceIds": [
+        "CONVEYOR_MD_FWD",
+        "CONVEYOR_MD_REV",
+        "CONVEYOR_AIRBAG"
+      ]
+    },
+    {
+      "id": "CONVEYOR_MD_FWD",
+      "type": "conveyor",
+      "name": "전진 유닛",
+      "relatedDeviceIds": [
+        "CONVEYOR"
+      ]
+    },
+    {
+      "id": "CONVEYOR_MD_REV",
+      "type": "conveyor",
+      "name": "후진 유닛",
+      "relatedDeviceIds": [
+        "CONVEYOR"
+      ]
+    },
+    {
+      "id": "CONVEYOR_AIRBAG",
+      "type": "conveyor",
+      "name": "에어 주입 유닛",
+      "relatedDeviceIds": [
+        "CONVEYOR"
+      ]
+    }
+  ],
+  "groups": {
+    "tank": [
+      "agitator",
+      "level_h",
+      "level_l",
+      "jacket",
+      "feeding",
+      "temp",
+      "exchanger"
+    ],
+    "head": [
+      "injection_rod",
+      "injection_sensor",
+      "cleaning_rod",
+      "cleaning_sensor",
+      "control_switch",
+      "air",
+      "operation_button",
+      "pressure",
+      "trip",
+      "relief_valve",
+      "inverter",
+      "pump_power"
+    ],
+    "pump": [
+      "operation_button",
+      "pressure",
+      "inverter",
+      "cal_nozzle",
+      "motor",
+      "coupling",
+      "metering_pump"
+    ],
+    "conveyor": [
+      "carrier_sensor",
+      "slide_sensor",
+      "slide_rod",
+      "stopper_sensor",
+      "stopper_rod",
+      "nozzle_sensor",
+      "nozzle_rod",
+      "air",
+      "drive"
+    ]
+  },
+  "groupNames": {
+    "slide_sensor": "이동대 센서 (정위치·후진)",
+    "drive": "컨베이어 구동부"
+  },
+  "relays": {
+    "P00022": {
+      "deviceId": "TANK_P1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 BACK 교반기 SS"
+    },
+    "P00042": {
+      "deviceId": "TANK_P1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 BACK 교반기  Trip"
+    },
+    "P00255": {
+      "deviceId": "TANK_P1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 BACK Agitator MC"
+    },
+    "P00072": {
+      "deviceId": "TANK_P1",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 1 BACK_Level HH"
+    },
+    "P00073": {
+      "deviceId": "TANK_P1",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 1 BACK_Level LL"
+    },
+    "P00148": {
+      "deviceId": "TANK_P1",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 1 BACK Jacket Temp"
+    },
+    "P00070": {
+      "deviceId": "TANK_P1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 BACK_Feeding V/V Open"
+    },
+    "P00071": {
+      "deviceId": "TANK_P1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 BACK_Feeding V/V Close"
+    },
+    "P00188": {
+      "deviceId": "TANK_P1",
+      "groupId": "feeding",
+      "partName": "원료공급 1-1 BACK ON SS"
+    },
+    "P00282": {
+      "deviceId": "TANK_P1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 BACK Feeding SOL"
+    },
+    "P00220": {
+      "deviceId": "TANK_P1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 BACK Cooling SOL"
+    },
+    "P00270": {
+      "deviceId": "TANK_P1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 BACK Heater"
+    },
+    "P00221": {
+      "deviceId": "TANK_P1",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 1 BACK Exchanger SOL"
+    },
+    "P00024": {
+      "deviceId": "TANK_P2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-1 SOFT 교반기 SS"
+    },
+    "P00044": {
+      "deviceId": "TANK_P2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-1 SOFT 교반기  Trip"
+    },
+    "P00257": {
+      "deviceId": "TANK_P2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-1 SOFT Agitator MC"
+    },
+    "P0007A": {
+      "deviceId": "TANK_P2",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 2-1 SOFT_Level HH"
+    },
+    "P0007B": {
+      "deviceId": "TANK_P2",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2-1 SOFT_Level LL"
+    },
+    "P0014A": {
+      "deviceId": "TANK_P2",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 2-1 SOFT Jacket Temp"
+    },
+    "P00078": {
+      "deviceId": "TANK_P2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-1 SOFT_Feeding V/V Open"
+    },
+    "P00079": {
+      "deviceId": "TANK_P2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-1 SOFT_Feeding V/V Close"
+    },
+    "P0018A": {
+      "deviceId": "TANK_P2",
+      "groupId": "feeding",
+      "partName": "원료공급 2-1 SOFT ON SS"
+    },
+    "P00284": {
+      "deviceId": "TANK_P2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-1 SOFT  Feeding SOL"
+    },
+    "P00224": {
+      "deviceId": "TANK_P2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-1 SOFT Cooling SOL"
+    },
+    "P00272": {
+      "deviceId": "TANK_P2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-1 SOFT  Heater"
+    },
+    "P00225": {
+      "deviceId": "TANK_P2",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 2-1 SOFT Exchanger SOL"
+    },
+    "P00027": {
+      "deviceId": "TANK_P3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-1 고탄성 교반기 SS"
+    },
+    "P00047": {
+      "deviceId": "TANK_P3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-1 고탄성 교반기  Trip"
+    },
+    "P0025A": {
+      "deviceId": "TANK_P3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-1 고탄성 Agitator MC"
+    },
+    "P00086": {
+      "deviceId": "TANK_P3",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 3-1 고탄성_Level HH"
+    },
+    "P00087": {
+      "deviceId": "TANK_P3",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3-1 고탄성_Level LL"
+    },
+    "P0014D": {
+      "deviceId": "TANK_P3",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 3-1 고탄성 Jacket Temp"
+    },
+    "P00084": {
+      "deviceId": "TANK_P3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-1 고탄성_Feeding V/V Open"
+    },
+    "P00085": {
+      "deviceId": "TANK_P3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-1 고탄성_Feeding V/V Close"
+    },
+    "P0018D": {
+      "deviceId": "TANK_P3",
+      "groupId": "feeding",
+      "partName": "원료공급 3-1 고탄성 ON SS"
+    },
+    "P00287": {
+      "deviceId": "TANK_P3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-1 고탄성  Feeding SOL"
+    },
+    "P0022A": {
+      "deviceId": "TANK_P3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-1 고탄성 Cooling SOL"
+    },
+    "P00275": {
+      "deviceId": "TANK_P3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-1 고탄성  Heater"
+    },
+    "P0022B": {
+      "deviceId": "TANK_P3",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 3-1 고탄성 Exchanger SOL"
+    },
+    "P00026": {
+      "deviceId": "TANK_P4",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-2 HARD 교반기 SS"
+    },
+    "P00046": {
+      "deviceId": "TANK_P4",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-2 HARD 교반기  Trip"
+    },
+    "P00259": {
+      "deviceId": "TANK_P4",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2-2 HARD  Agitator MC"
+    },
+    "P00082": {
+      "deviceId": "TANK_P4",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 2-2 HARD_Level HH"
+    },
+    "P00083": {
+      "deviceId": "TANK_P4",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2-2 HARD_Level LL"
+    },
+    "P0014C": {
+      "deviceId": "TANK_P4",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 2-2 HARD Jacket Temp"
+    },
+    "P00080": {
+      "deviceId": "TANK_P4",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-2 HARD_Feeding V/V Open"
+    },
+    "P00081": {
+      "deviceId": "TANK_P4",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-2 HARD_Feeding V/V Close"
+    },
+    "P0018C": {
+      "deviceId": "TANK_P4",
+      "groupId": "feeding",
+      "partName": "원료공급 2-2  HARD ON SS"
+    },
+    "P00286": {
+      "deviceId": "TANK_P4",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2-2 HARD  Feeding SOL"
+    },
+    "P00228": {
+      "deviceId": "TANK_P4",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-2 HARD Cooling SOL"
+    },
+    "P00274": {
+      "deviceId": "TANK_P4",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-2 HARD  Heater"
+    },
+    "P00229": {
+      "deviceId": "TANK_P4",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 2-2 HARD Exchanger SOL"
+    },
+    "P00029": {
+      "deviceId": "TANK_P5",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-2 CUSH 교반기 SS"
+    },
+    "P00049": {
+      "deviceId": "TANK_P5",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-2 CUSH 교반기  Trip"
+    },
+    "P0025C": {
+      "deviceId": "TANK_P5",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3-2 CUSH Agitator MC"
+    },
+    "P0008E": {
+      "deviceId": "TANK_P5",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 3-2 CUSH_Level HH"
+    },
+    "P0008F": {
+      "deviceId": "TANK_P5",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3-2 CUSH_Level LL"
+    },
+    "P0014F": {
+      "deviceId": "TANK_P5",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 3-2 CUSH Jacket Temp"
+    },
+    "P0008C": {
+      "deviceId": "TANK_P5",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-2 CUSH_Feeding V/V Open"
+    },
+    "P0008D": {
+      "deviceId": "TANK_P5",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-2 CUSH_Feeding V/V Close"
+    },
+    "P0018F": {
+      "deviceId": "TANK_P5",
+      "groupId": "feeding",
+      "partName": "원료공급 3-2 CUSH ON SS"
+    },
+    "P00289": {
+      "deviceId": "TANK_P5",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3-2 CUSH  Feeding SOL"
+    },
+    "P0022E": {
+      "deviceId": "TANK_P5",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-2 CUSH Cooling SOL"
+    },
+    "P00277": {
+      "deviceId": "TANK_P5",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-2 CUSH  Heater"
+    },
+    "P0022F": {
+      "deviceId": "TANK_P5",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 3-2 CUSH Exchanger SOL"
+    },
+    "P00023": {
+      "deviceId": "TANK_I1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 ISO  교반기 SS"
+    },
+    "P00043": {
+      "deviceId": "TANK_I1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 ISO  교반기  Trip"
+    },
+    "P00256": {
+      "deviceId": "TANK_I1",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 1 ISO Agitator MC"
+    },
+    "P0004E": {
+      "deviceId": "TANK_I1",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 1 ISO Level Emer.HHH (PNP)"
+    },
+    "P00076": {
+      "deviceId": "TANK_I1",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 1 ISO_Level HH"
+    },
+    "P00077": {
+      "deviceId": "TANK_I1",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 1 ISO_Level LL"
+    },
+    "P00149": {
+      "deviceId": "TANK_I1",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 1 ISO Jacket Temp"
+    },
+    "P00074": {
+      "deviceId": "TANK_I1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 ISO_Feeding V/V Open"
+    },
+    "P00075": {
+      "deviceId": "TANK_I1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 ISO_Feeding V/V Close"
+    },
+    "P00189": {
+      "deviceId": "TANK_I1",
+      "groupId": "feeding",
+      "partName": "원료공급 1-1 ISO ON SS"
+    },
+    "P00283": {
+      "deviceId": "TANK_I1",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 1 ISO Feeding SOL"
+    },
+    "P00222": {
+      "deviceId": "TANK_I1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 ISO Cooling SOL"
+    },
+    "P00271": {
+      "deviceId": "TANK_I1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 ISO Heater"
+    },
+    "P00223": {
+      "deviceId": "TANK_I1",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 1 ISO Exchanger SOL"
+    },
+    "P00025": {
+      "deviceId": "TANK_I2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2  MDI  교반기 SS"
+    },
+    "P00045": {
+      "deviceId": "TANK_I2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2  MDI  교반기  Trip"
+    },
+    "P00258": {
+      "deviceId": "TANK_I2",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 2 MDI Agitator MC"
+    },
+    "P0007E": {
+      "deviceId": "TANK_I2",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 2_Level HH"
+    },
+    "P0007F": {
+      "deviceId": "TANK_I2",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2_Level LL"
+    },
+    "P0014B": {
+      "deviceId": "TANK_I2",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 2  MDI Jacket Temp"
+    },
+    "P0007C": {
+      "deviceId": "TANK_I2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2_Feeding V/V Open"
+    },
+    "P0007D": {
+      "deviceId": "TANK_I2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2_Feeding V/V Close"
+    },
+    "P0018B": {
+      "deviceId": "TANK_I2",
+      "groupId": "feeding",
+      "partName": "원료공급 2 MDI ON SS"
+    },
+    "P00285": {
+      "deviceId": "TANK_I2",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 2  MDI Feeding SOL"
+    },
+    "P00226": {
+      "deviceId": "TANK_I2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-2 MDI Cooling SOL"
+    },
+    "P00273": {
+      "deviceId": "TANK_I2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2 MDI  Heater"
+    },
+    "P00227": {
+      "deviceId": "TANK_I2",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 2-2 MDI Exchanger SOL"
+    },
+    "P00028": {
+      "deviceId": "TANK_I3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3  ISO 교반기 SS"
+    },
+    "P00048": {
+      "deviceId": "TANK_I3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3  ISO 교반기  Trip"
+    },
+    "P0025B": {
+      "deviceId": "TANK_I3",
+      "groupId": "agitator",
+      "partName": "워킹 Tank 3  ISO Agitator MC"
+    },
+    "P0004F": {
+      "deviceId": "TANK_I3",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 3 ISO Level Emer.HHH (PNP)"
+    },
+    "P0008A": {
+      "deviceId": "TANK_I3",
+      "groupId": "level_h",
+      "partName": "워킹 Tank 3  ISO_Level HH"
+    },
+    "P0008B": {
+      "deviceId": "TANK_I3",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3  ISO_Level LL"
+    },
+    "P0014E": {
+      "deviceId": "TANK_I3",
+      "groupId": "jacket",
+      "partName": "워킹 Tank 3  ISO Jacket Temp"
+    },
+    "P00088": {
+      "deviceId": "TANK_I3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3  ISO_Feeding V/V Open"
+    },
+    "P00089": {
+      "deviceId": "TANK_I3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3  ISO_Feeding V/V Close"
+    },
+    "P0018E": {
+      "deviceId": "TANK_I3",
+      "groupId": "feeding",
+      "partName": "원료공급 3 ISO ON SS"
+    },
+    "P00288": {
+      "deviceId": "TANK_I3",
+      "groupId": "feeding",
+      "partName": "워킹 Tank 3  ISO  Feeding SOL"
+    },
+    "P0022C": {
+      "deviceId": "TANK_I3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3  ISO Cooling SOL"
+    },
+    "P00276": {
+      "deviceId": "TANK_I3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3  ISO  Heater"
+    },
+    "P0022D": {
+      "deviceId": "TANK_I3",
+      "groupId": "exchanger",
+      "partName": "워킹 Tank 3  ISO Exchanger SOL"
+    },
+    "P00018": {
+      "deviceId": "PUMP_P1",
+      "groupId": "operation_button",
+      "partName": "1펌프 BACK ON/OFF PBL"
+    },
+    "P00298": {
+      "deviceId": "PUMP_P1",
+      "groupId": "operation_button",
+      "partName": "1펌프 BACK ON/OFF PBL"
+    },
+    "P0005A": {
+      "deviceId": "PUMP_P1",
+      "groupId": "pressure",
+      "partName": "1-1펌프 BACK Pressure S/W"
+    },
+    "P00030": {
+      "deviceId": "PUMP_P1",
+      "groupId": "inverter",
+      "partName": "1-1펌프 BACK Trip"
+    },
+    "P00190": {
+      "deviceId": "PUMP_P1",
+      "groupId": "inverter",
+      "partName": "1펌프 BACK Inverter_FWD"
+    },
+    "P00191": {
+      "deviceId": "PUMP_P1",
+      "groupId": "inverter",
+      "partName": "1펌프 BACK Inverter_X4 SPEED"
+    },
+    "P00192": {
+      "deviceId": "PUMP_P1",
+      "groupId": "inverter",
+      "partName": "1펌프 BACK Inverter_X5 RESET"
+    },
+    "P00239": {
+      "deviceId": "PUMP_P1",
+      "groupId": "cal_nozzle",
+      "partName": "1펌프 BACK Calibratin Nozzle SOL"
+    },
+    "P0002A": {
+      "deviceId": "PUMP_P2",
+      "groupId": "operation_button",
+      "partName": "1-2펌프 CUSH ON/OFF PBL"
+    },
+    "P00302": {
+      "deviceId": "PUMP_P2",
+      "groupId": "operation_button",
+      "partName": "1-2펌프 CUSH ON/OFF PL"
+    },
+    "P00440": {
+      "deviceId": "PUMP_P2",
+      "groupId": "pressure",
+      "partName": "1-2펌프 CUSH In_Pressure S/W"
+    },
+    "P0004A": {
+      "deviceId": "PUMP_P2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 CUSH Trip"
+    },
+    "P00460": {
+      "deviceId": "PUMP_P2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 CUSH Inverter_FWD"
+    },
+    "P00461": {
+      "deviceId": "PUMP_P2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 CUSH Inverter_X4 SPEED"
+    },
+    "P00462": {
+      "deviceId": "PUMP_P2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 CUSH Inverter_X5 RESET"
+    },
+    "P00244": {
+      "deviceId": "PUMP_P2",
+      "groupId": "cal_nozzle",
+      "partName": "1-2펌프 CUSH Calibratin Nozzle SOL"
+    },
+    "P0001A": {
+      "deviceId": "PUMP_P3",
+      "groupId": "operation_button",
+      "partName": "2-1펌프 SOFT ON/OFF PBL"
+    },
+    "P0029A": {
+      "deviceId": "PUMP_P3",
+      "groupId": "operation_button",
+      "partName": "2-1펌프 SOFT ON/OFF PBL"
+    },
+    "P0005C": {
+      "deviceId": "PUMP_P3",
+      "groupId": "pressure",
+      "partName": "2-1펌프 SOFT Pressure S/W"
+    },
+    "P00032": {
+      "deviceId": "PUMP_P3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 SOFT Trip"
+    },
+    "P00196": {
+      "deviceId": "PUMP_P3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 SOFT Inverter_FWD"
+    },
+    "P00197": {
+      "deviceId": "PUMP_P3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 SOFT Inverter_X4 SPEED"
+    },
+    "P00198": {
+      "deviceId": "PUMP_P3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 SOFT Inverter_X5 RESET"
+    },
+    "P0023B": {
+      "deviceId": "PUMP_P3",
+      "groupId": "cal_nozzle",
+      "partName": "2-1펌프 SOFT Calibratin Nozzle SOL"
+    },
+    "P0001C": {
+      "deviceId": "PUMP_P4",
+      "groupId": "operation_button",
+      "partName": "2-2펌프 HARD ON/OFF PBL"
+    },
+    "P0029C": {
+      "deviceId": "PUMP_P4",
+      "groupId": "operation_button",
+      "partName": "2-2펌프 HARD ON/OFF PBL"
+    },
+    "P0005E": {
+      "deviceId": "PUMP_P4",
+      "groupId": "pressure",
+      "partName": "2-2펌프 HARD Pressure S/W"
+    },
+    "P00034": {
+      "deviceId": "PUMP_P4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 HARD Trip"
+    },
+    "P0019C": {
+      "deviceId": "PUMP_P4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 HARD Inverter_FWD"
+    },
+    "P0019D": {
+      "deviceId": "PUMP_P4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 HARD Inverter_X4 SPEED"
+    },
+    "P0019E": {
+      "deviceId": "PUMP_P4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 HARD Inverter_X5 RESET"
+    },
+    "P0023D": {
+      "deviceId": "PUMP_P4",
+      "groupId": "cal_nozzle",
+      "partName": "2-2펌프 HARD Calibratin Nozzle SOL"
+    },
+    "P0001E": {
+      "deviceId": "PUMP_P5",
+      "groupId": "operation_button",
+      "partName": "3펌프 고탄성 ON/OFF PBL"
+    },
+    "P0029E": {
+      "deviceId": "PUMP_P5",
+      "groupId": "operation_button",
+      "partName": "3펌프 고탄성 ON/OFF PBL"
+    },
+    "P00060": {
+      "deviceId": "PUMP_P5",
+      "groupId": "pressure",
+      "partName": "3펌프 고탄성 Pressure S/W"
+    },
+    "P00036": {
+      "deviceId": "PUMP_P5",
+      "groupId": "inverter",
+      "partName": "3펌프 고탄성 Trip"
+    },
+    "P00203": {
+      "deviceId": "PUMP_P5",
+      "groupId": "inverter",
+      "partName": "3펌프 고탄성 Inverter_FWD"
+    },
+    "P00204": {
+      "deviceId": "PUMP_P5",
+      "groupId": "inverter",
+      "partName": "3펌프 고탄성 Inverter_X4 SPEED"
+    },
+    "P00205": {
+      "deviceId": "PUMP_P5",
+      "groupId": "inverter",
+      "partName": "3펌프 고탄성 Inverter_X5 RESET"
+    },
+    "P0023F": {
+      "deviceId": "PUMP_P5",
+      "groupId": "cal_nozzle",
+      "partName": "3펌프 고탄성 Calibratin Nozzle SOL"
+    },
+    "P0002C": {
+      "deviceId": "PUMP_P6",
+      "groupId": "operation_button",
+      "partName": "3-2펌프 BACK ON/OFF PBL"
+    },
+    "P00304": {
+      "deviceId": "PUMP_P6",
+      "groupId": "operation_button",
+      "partName": "3-2펌프 BACK ON/OFF PL"
+    },
+    "P00442": {
+      "deviceId": "PUMP_P6",
+      "groupId": "pressure",
+      "partName": "3-2펌프 BACK In_Pressure S/W"
+    },
+    "P0004C": {
+      "deviceId": "PUMP_P6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 BACK Trip"
+    },
+    "P00466": {
+      "deviceId": "PUMP_P6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 BACK Inverter_FWD"
+    },
+    "P00467": {
+      "deviceId": "PUMP_P6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 BACK Inverter_X4 SPEED"
+    },
+    "P00468": {
+      "deviceId": "PUMP_P6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 BACK Inverter_X5 RESET"
+    },
+    "P00246": {
+      "deviceId": "PUMP_P6",
+      "groupId": "cal_nozzle",
+      "partName": "3-2펌프 BACK Calibratin Nozzle SOL"
+    },
+    "P00020": {
+      "deviceId": "PUMP_P7",
+      "groupId": "operation_button",
+      "partName": "4펌프 CUSH ON/OFF PBL"
+    },
+    "P00300": {
+      "deviceId": "PUMP_P7",
+      "groupId": "operation_button",
+      "partName": "4펌프 CUSH ON/OFF PBL"
+    },
+    "P00062": {
+      "deviceId": "PUMP_P7",
+      "groupId": "pressure",
+      "partName": "4펌프 CUSH Pressure S/W"
+    },
+    "P00038": {
+      "deviceId": "PUMP_P7",
+      "groupId": "inverter",
+      "partName": "4펌프 CUSH  Trip"
+    },
+    "P00209": {
+      "deviceId": "PUMP_P7",
+      "groupId": "inverter",
+      "partName": "4펌프 CUSH Inverter_FWD"
+    },
+    "P0020A": {
+      "deviceId": "PUMP_P7",
+      "groupId": "inverter",
+      "partName": "4펌프 CUSH Inverter_X4 SPEED"
+    },
+    "P0020B": {
+      "deviceId": "PUMP_P7",
+      "groupId": "inverter",
+      "partName": "4펌프 CUSH Inverter_X5 RESET"
+    },
+    "P00241": {
+      "deviceId": "PUMP_P7",
+      "groupId": "cal_nozzle",
+      "partName": "4펌프 CUSH Calibratin Nozzle SOL"
+    },
+    "P00019": {
+      "deviceId": "PUMP_I1",
+      "groupId": "operation_button",
+      "partName": "1펌프 ISO ON/OFF PBL"
+    },
+    "P00299": {
+      "deviceId": "PUMP_I1",
+      "groupId": "operation_button",
+      "partName": "1펌프 ISO ON/OFF PBL"
+    },
+    "P0005B": {
+      "deviceId": "PUMP_I1",
+      "groupId": "pressure",
+      "partName": "1-1펌프 ISO Pressure S/W"
+    },
+    "P00031": {
+      "deviceId": "PUMP_I1",
+      "groupId": "inverter",
+      "partName": "1-1펌프 ISO Trip"
+    },
+    "P00193": {
+      "deviceId": "PUMP_I1",
+      "groupId": "inverter",
+      "partName": "1펌프 ISO Inverter_FWD"
+    },
+    "P00194": {
+      "deviceId": "PUMP_I1",
+      "groupId": "inverter",
+      "partName": "1펌프 ISO Inverter_X4 SPEED"
+    },
+    "P00195": {
+      "deviceId": "PUMP_I1",
+      "groupId": "inverter",
+      "partName": "1펌프 ISO Inverter_X5 RESET"
+    },
+    "P0023A": {
+      "deviceId": "PUMP_I1",
+      "groupId": "cal_nozzle",
+      "partName": "1펌프 ISO Calibratin Nozzle SOL"
+    },
+    "P0002B": {
+      "deviceId": "PUMP_I2",
+      "groupId": "operation_button",
+      "partName": "1-2펌프 ISO ON/OFF PBL"
+    },
+    "P00303": {
+      "deviceId": "PUMP_I2",
+      "groupId": "operation_button",
+      "partName": "1-2펌프 ISO ON/OFF PL"
+    },
+    "P00441": {
+      "deviceId": "PUMP_I2",
+      "groupId": "pressure",
+      "partName": "1-2펌프 ISO In_Pressure S/W"
+    },
+    "P0004B": {
+      "deviceId": "PUMP_I2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 ISO Trip"
+    },
+    "P00463": {
+      "deviceId": "PUMP_I2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 ISO Inverter_FWD"
+    },
+    "P00464": {
+      "deviceId": "PUMP_I2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 ISO Inverter_X4 SPEED"
+    },
+    "P00465": {
+      "deviceId": "PUMP_I2",
+      "groupId": "inverter",
+      "partName": "1-2펌프 ISO Inverter_X5 RESET"
+    },
+    "P00245": {
+      "deviceId": "PUMP_I2",
+      "groupId": "cal_nozzle",
+      "partName": "1-2펌프 ISO Calibratin Nozzle SOL"
+    },
+    "P0001B": {
+      "deviceId": "PUMP_I3",
+      "groupId": "operation_button",
+      "partName": "2-1펌프 MDI ON/OFF PBL"
+    },
+    "P0029B": {
+      "deviceId": "PUMP_I3",
+      "groupId": "operation_button",
+      "partName": "2-1펌프 MDI  ON/OFF PBL"
+    },
+    "P0005D": {
+      "deviceId": "PUMP_I3",
+      "groupId": "pressure",
+      "partName": "2-1펌프 MDI Pressure S/W"
+    },
+    "P00033": {
+      "deviceId": "PUMP_I3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 MDI  Trip"
+    },
+    "P00199": {
+      "deviceId": "PUMP_I3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 MDI  Inverter_FWD"
+    },
+    "P0019A": {
+      "deviceId": "PUMP_I3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 MDI  Inverter_X4 SPEED"
+    },
+    "P0019B": {
+      "deviceId": "PUMP_I3",
+      "groupId": "inverter",
+      "partName": "2-1펌프 MDI  Inverter_X5 RESET"
+    },
+    "P0023C": {
+      "deviceId": "PUMP_I3",
+      "groupId": "cal_nozzle",
+      "partName": "2-1펌프 MDI Calibratin Nozzle SOL"
+    },
+    "P0001D": {
+      "deviceId": "PUMP_I4",
+      "groupId": "operation_button",
+      "partName": "2-2펌프 MDI ON/OFF PBL"
+    },
+    "P0029D": {
+      "deviceId": "PUMP_I4",
+      "groupId": "operation_button",
+      "partName": "2-2펌프 MDI  ON/OFF PBL"
+    },
+    "P0005F": {
+      "deviceId": "PUMP_I4",
+      "groupId": "pressure",
+      "partName": "2-2펌프 MDI Pressure S/W"
+    },
+    "P00035": {
+      "deviceId": "PUMP_I4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 MDI  Trip"
+    },
+    "P00200": {
+      "deviceId": "PUMP_I4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 MDI Inverter_FWD"
+    },
+    "P00201": {
+      "deviceId": "PUMP_I4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 MDI Inverter_X4 SPEED"
+    },
+    "P00202": {
+      "deviceId": "PUMP_I4",
+      "groupId": "inverter",
+      "partName": "2-2펌프 MDI Inverter_X5 RESET"
+    },
+    "P0023E": {
+      "deviceId": "PUMP_I4",
+      "groupId": "cal_nozzle",
+      "partName": "2-2펌프 MDI  Calibratin Nozzle SOL"
+    },
+    "P0001F": {
+      "deviceId": "PUMP_I5",
+      "groupId": "operation_button",
+      "partName": "3펌프 ISO ON/OFF PBL"
+    },
+    "P0029F": {
+      "deviceId": "PUMP_I5",
+      "groupId": "operation_button",
+      "partName": "3펌프 ISO ON/OFF PBL"
+    },
+    "P00061": {
+      "deviceId": "PUMP_I5",
+      "groupId": "pressure",
+      "partName": "3펌프 ISO Pressure S/W"
+    },
+    "P00037": {
+      "deviceId": "PUMP_I5",
+      "groupId": "inverter",
+      "partName": "3펌프 ISO  Trip"
+    },
+    "P00206": {
+      "deviceId": "PUMP_I5",
+      "groupId": "inverter",
+      "partName": "3펌프 ISO Inverter_FWD"
+    },
+    "P00207": {
+      "deviceId": "PUMP_I5",
+      "groupId": "inverter",
+      "partName": "3펌프 ISO Inverter_X4 SPEED"
+    },
+    "P00208": {
+      "deviceId": "PUMP_I5",
+      "groupId": "inverter",
+      "partName": "3펌프 ISO Inverter_X5 RESET"
+    },
+    "P00240": {
+      "deviceId": "PUMP_I5",
+      "groupId": "cal_nozzle",
+      "partName": "3펌프 ISO Calibratin Nozzle SOL"
+    },
+    "P0002D": {
+      "deviceId": "PUMP_I6",
+      "groupId": "operation_button",
+      "partName": "3-2펌프 ISO ON/OFF PBL"
+    },
+    "P00305": {
+      "deviceId": "PUMP_I6",
+      "groupId": "operation_button",
+      "partName": "3-2펌프 ISO ON/OFF PL"
+    },
+    "P00443": {
+      "deviceId": "PUMP_I6",
+      "groupId": "pressure",
+      "partName": "3-2펌프 ISO In_Pressure S/W"
+    },
+    "P0004D": {
+      "deviceId": "PUMP_I6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 ISO  Trip"
+    },
+    "P00469": {
+      "deviceId": "PUMP_I6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 ISO Inverter_FWD"
+    },
+    "P0046A": {
+      "deviceId": "PUMP_I6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 ISO Inverter_X4 SPEED"
+    },
+    "P0046B": {
+      "deviceId": "PUMP_I6",
+      "groupId": "inverter",
+      "partName": "3-2펌프 ISO Inverter_X5 RESET"
+    },
+    "P00247": {
+      "deviceId": "PUMP_I6",
+      "groupId": "cal_nozzle",
+      "partName": "3-2펌프 ISO Calibratin Nozzle SOL"
+    },
+    "P00021": {
+      "deviceId": "PUMP_I7",
+      "groupId": "operation_button",
+      "partName": "4펌프 ISO ON/OFF PBL"
+    },
+    "P00301": {
+      "deviceId": "PUMP_I7",
+      "groupId": "operation_button",
+      "partName": "4펌프 ISO ON/OFF PBL"
+    },
+    "P00063": {
+      "deviceId": "PUMP_I7",
+      "groupId": "pressure",
+      "partName": "4펌프 ISO Pressure S/W"
+    },
+    "P00039": {
+      "deviceId": "PUMP_I7",
+      "groupId": "inverter",
+      "partName": "4펌프 ISO  Trip"
+    },
+    "P0020C": {
+      "deviceId": "PUMP_I7",
+      "groupId": "inverter",
+      "partName": "4펌프 ISO Inverter_FWD"
+    },
+    "P0020D": {
+      "deviceId": "PUMP_I7",
+      "groupId": "inverter",
+      "partName": "4펌프 ISO Inverter_X4 SPEED"
+    },
+    "P0020E": {
+      "deviceId": "PUMP_I7",
+      "groupId": "inverter",
+      "partName": "4펌프 ISO Inverter_X5 RESET"
+    },
+    "P00242": {
+      "deviceId": "PUMP_I7",
+      "groupId": "cal_nozzle",
+      "partName": "4펌프 ISO Calibratin Nozzle SOL"
+    },
+    "P00050": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_sensor",
+      "partName": "Head_1 Injection 후진감지 (PNP)"
+    },
+    "P00064": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_sensor",
+      "partName": "Head_1-2 Injection 후진감지 (PNP)"
+    },
+    "P00279": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "Head_1 Injection SOL"
+    },
+    "P0028D": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "Head_1-2 Injection SOL"
+    },
+    "P00051": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "cleaning_sensor",
+      "partName": "Head_1 Clean Up 상승감지 (PNP)"
+    },
+    "P00278": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "cleaning_rod",
+      "partName": "Head_1 Clean Piston SOL"
+    },
+    "P00090": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1 테스트발포 On / Off PBL"
+    },
+    "P00091": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1 증압 On / Off PBL"
+    },
+    "P00092": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  크리닝 On / Off PBL"
+    },
+    "P00094": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  헤드선택 1-1 SS"
+    },
+    "P00095": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  헤드선택 1-2 SS"
+    },
+    "P00096": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  발포선택 Off/On SS"
+    },
+    "P00138": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Head_1_크린 S/W"
+    },
+    "P00139": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Head_1_증압 S/W"
+    },
+    "P00318": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1 테스트발포 On / Off PL"
+    },
+    "P00319": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1 증압 On / Off PBL"
+    },
+    "P0031A": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  크리닝 On / Off PL"
+    },
+    "P0031B": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "control_switch",
+      "partName": "Local Head_1  로보트원점 On / Off PL"
+    },
+    "P00478": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "air",
+      "partName": "HD1 주입구 Air분사"
+    },
+    "P00014": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "operation_button",
+      "partName": "유압 1 ON/OFF PBL"
+    },
+    "P00294": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "operation_button",
+      "partName": "유압 1 Pump ON/OFF PBL"
+    },
+    "P00066": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "pressure",
+      "partName": "유압1 Pressure Low"
+    },
+    "P00067": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "pressure",
+      "partName": "유압1 Pressure High"
+    },
+    "P0003E": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "trip",
+      "partName": "유압 1 Trip"
+    },
+    "P00234": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "relief_valve",
+      "partName": "유압 1 Pump Relife SOL"
+    },
+    "P0024E": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "inverter",
+      "partName": "유압1 INV P1"
+    },
+    "P00266": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "inverter",
+      "partName": "유압1_INV P5(고속)"
+    },
+    "P00251": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "pump_power",
+      "partName": "유압 1 Pump MC"
+    },
+    "P00052": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_sensor",
+      "partName": "Head_2 Injection 후진감지1 (PNP)"
+    },
+    "P00053": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_sensor",
+      "partName": "Head_2 Injection 후진감지2 (PNP)"
+    },
+    "P0027B": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "Head_2 Injection 1 SOL"
+    },
+    "P0027C": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "Head_2 Injection_2 SOL"
+    },
+    "P00054": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "cleaning_sensor",
+      "partName": "Head_2 Clean Up 상승감지 (PNP)"
+    },
+    "P0027A": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "cleaning_rod",
+      "partName": "Head_2 Clean Piston SOL"
+    },
+    "P00097": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2 테스트발포 On / Off PBL"
+    },
+    "P00098": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2 증압 On / Off PBL"
+    },
+    "P00099": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  크리닝 On / Off PBL"
+    },
+    "P0009A": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  로보트원점 On / Off PBL"
+    },
+    "P0009B": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  헤드선택 1-1 SS"
+    },
+    "P0009C": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  헤드선택 1-2 SS"
+    },
+    "P0009D": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  발포선택 Off/On SS"
+    },
+    "P0013A": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Head_2_크린 S/W"
+    },
+    "P0013B": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Head_2_증압 S/W"
+    },
+    "P0031C": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2 테스트발포 On / Off PL"
+    },
+    "P0031D": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2 증압 On / Off PBL"
+    },
+    "P0031E": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "control_switch",
+      "partName": "Local Head_2  크리닝 On / Off PL"
+    },
+    "P00479": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "air",
+      "partName": "HD2 주입구 Air분사"
+    },
+    "P00015": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "operation_button",
+      "partName": "유압 2 ON/OFF PBL"
+    },
+    "P00295": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "operation_button",
+      "partName": "유압 2 Pump ON/OFF PBL"
+    },
+    "P00068": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "pressure",
+      "partName": "유압2 Pressure Low"
+    },
+    "P00069": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "pressure",
+      "partName": "유압2 Pressure High"
+    },
+    "P0003F": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "trip",
+      "partName": "유압 2 Trip"
+    },
+    "P00235": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "relief_valve",
+      "partName": "유압 2 Pump Relife SOL"
+    },
+    "P0024F": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "inverter",
+      "partName": "유압2 INV P1"
+    },
+    "P00267": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "inverter",
+      "partName": "유압2_INV P5(고속)"
+    },
+    "P00252": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "pump_power",
+      "partName": "유압 2 Pump MC"
+    },
+    "P00055": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_sensor",
+      "partName": "Head_3 Injection 후진감지 (PNP)"
+    },
+    "P00065": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_sensor",
+      "partName": "Head_3-2 Injection 후진감지 (PNP)"
+    },
+    "P0027E": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "Head_3 Injection SOL"
+    },
+    "P0028E": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "Head_3-2 Injection SOL"
+    },
+    "P00056": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "cleaning_sensor",
+      "partName": "Head_3 Clean Up 상승감지 (PNP)"
+    },
+    "P0027D": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "cleaning_rod",
+      "partName": "Head_3 Clean Piston SOL"
+    },
+    "P0009E": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3 테스트발포 On / Off PBL"
+    },
+    "P0009F": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3 증압 On / Off PBL"
+    },
+    "P00100": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  크리닝 On / Off PBL"
+    },
+    "P00101": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  로보트원점 On / Off PBL"
+    },
+    "P00102": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  헤드선택 1-1 SS"
+    },
+    "P00103": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  헤드선택 1-2 SS"
+    },
+    "P00104": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  발포선택 Off/On SS"
+    },
+    "P0013C": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Head_3_크린 S/W"
+    },
+    "P0013D": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Head_3_증압 S/W"
+    },
+    "P00320": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3 테스트발포 On / Off PL"
+    },
+    "P00321": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3 증압 On / Off PBL"
+    },
+    "P00322": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  크리닝 On / Off PL"
+    },
+    "P00323": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "control_switch",
+      "partName": "Local Head_3  로보트원점 On / Off PL"
+    },
+    "P0047A": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "air",
+      "partName": "HD3 주입구 Air분사"
+    },
+    "P00016": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "operation_button",
+      "partName": "유압 3 ON/OFF PBL"
+    },
+    "P00296": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "operation_button",
+      "partName": "유압 3 Pump ON/OFF PBL"
+    },
+    "P0006A": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "pressure",
+      "partName": "유압3 Pressure Low"
+    },
+    "P0006B": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "pressure",
+      "partName": "유압3 Pressure High"
+    },
+    "P00040": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "trip",
+      "partName": "유압 3 Trip"
+    },
+    "P00236": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "relief_valve",
+      "partName": "유압 3 Pump Relife SOL"
+    },
+    "P00268": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "inverter",
+      "partName": "유압3_INV P5(고속)"
+    },
+    "P00306": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "inverter",
+      "partName": "유압3 INV P1"
+    },
+    "P00253": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "pump_power",
+      "partName": "유압 3 Pump MC"
+    },
+    "P00057": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "injection_sensor",
+      "partName": "Head_4 Injection 후진감지 (PNP)"
+    },
+    "P00280": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "injection_rod",
+      "partName": "Head_4 Injection SOL"
+    },
+    "P00058": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "cleaning_sensor",
+      "partName": "Head_4 Clean Up 상승감지 (PNP)"
+    },
+    "P0027F": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "cleaning_rod",
+      "partName": "Head_4 Clean Piston SOL"
+    },
+    "P00105": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4 테스트발포 On / Off PBL"
+    },
+    "P00106": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4 증압 On / Off PBL"
+    },
+    "P00107": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4  크리닝 On / Off PBL"
+    },
+    "P00109": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4  헤드선택 1-1 SS"
+    },
+    "P0010A": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4  헤드선택 1-2 SS"
+    },
+    "P0010B": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4  발포선택 Off/On SS"
+    },
+    "P0013E": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Head_4_크린 S/W"
+    },
+    "P0013F": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Head_4_증압 S/W"
+    },
+    "P00324": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4 테스트발포 On / Off PL"
+    },
+    "P00325": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4 증압 On / Off PBL"
+    },
+    "P00326": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "control_switch",
+      "partName": "Local Head_4  크리닝 On / Off PL"
+    },
+    "P0047B": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "air",
+      "partName": "HD4주입구 Air_Sol"
+    },
+    "P00017": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "operation_button",
+      "partName": "유압 4 ON/OFF PBL"
+    },
+    "P00297": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "operation_button",
+      "partName": "유압 4 Pump ON/OFF PBL"
+    },
+    "P0006C": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "pressure",
+      "partName": "유압4 Pressure Low"
+    },
+    "P0006D": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "pressure",
+      "partName": "유압4 Pressure High"
+    },
+    "P00041": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "trip",
+      "partName": "유압 4 Trip"
+    },
+    "P00237": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "relief_valve",
+      "partName": "유압 4 Pump Relife SOL"
+    },
+    "P00269": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "inverter",
+      "partName": "유압4_INV P5(고속)"
+    },
+    "P00307": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "inverter",
+      "partName": "유압4 INV P1"
+    },
+    "P00254": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "pump_power",
+      "partName": "유압 4 Pump MC"
+    },
+    "Scale_Out___PT_P1": {
+      "deviceId": "PUMP_P1",
+      "groupId": "pressure",
+      "partName": "1펌프 BACK 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P2": {
+      "deviceId": "PUMP_P2",
+      "groupId": "pressure",
+      "partName": "1-2펌프 CUSH 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P3": {
+      "deviceId": "PUMP_P3",
+      "groupId": "pressure",
+      "partName": "2-1펌프 SOFT 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P4": {
+      "deviceId": "PUMP_P4",
+      "groupId": "pressure",
+      "partName": "2-2펌프 HARD 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P5": {
+      "deviceId": "PUMP_P5",
+      "groupId": "pressure",
+      "partName": "3펌프 고탄성 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P6": {
+      "deviceId": "PUMP_P6",
+      "groupId": "pressure",
+      "partName": "3-2펌프 BACK 토출 압력(PT)"
+    },
+    "Scale_Out___PT_P7": {
+      "deviceId": "PUMP_P7",
+      "groupId": "pressure",
+      "partName": "4펌프 CUSH 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I1": {
+      "deviceId": "PUMP_I1",
+      "groupId": "pressure",
+      "partName": "1펌프 ISO 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I2": {
+      "deviceId": "PUMP_I2",
+      "groupId": "pressure",
+      "partName": "1-2펌프 ISO 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I3": {
+      "deviceId": "PUMP_I3",
+      "groupId": "pressure",
+      "partName": "2-1펌프 MDI 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I4": {
+      "deviceId": "PUMP_I4",
+      "groupId": "pressure",
+      "partName": "2-2펌프 MDI 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I5": {
+      "deviceId": "PUMP_I5",
+      "groupId": "pressure",
+      "partName": "3펌프 ISO 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I6": {
+      "deviceId": "PUMP_I6",
+      "groupId": "pressure",
+      "partName": "3-2펌프 ISO 토출 압력(PT)"
+    },
+    "Scale_Out___PT_I7": {
+      "deviceId": "PUMP_I7",
+      "groupId": "pressure",
+      "partName": "4펌프 ISO 토출 압력(PT)"
+    },
+    "TK_Level_PV_P1": {
+      "deviceId": "TANK_P1",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 1 BACK 레벨 PV"
+    },
+    "TK_Temp_PV_P1": {
+      "deviceId": "TANK_P1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 BACK 온도 PV"
+    },
+    "TK_Level_PV_P2": {
+      "deviceId": "TANK_P2",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2-1 SOFT 레벨 PV"
+    },
+    "TK_Temp_PV_P2": {
+      "deviceId": "TANK_P2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-1 SOFT 온도 PV"
+    },
+    "TK_Level_PV_P3": {
+      "deviceId": "TANK_P3",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3-1 고탄성 레벨 PV"
+    },
+    "TK_Temp_PV_P3": {
+      "deviceId": "TANK_P3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-1 고탄성 온도 PV"
+    },
+    "TK_Level_PV_P4": {
+      "deviceId": "TANK_P4",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2-2 HARD 레벨 PV"
+    },
+    "TK_Temp_PV_P4": {
+      "deviceId": "TANK_P4",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-2 HARD 온도 PV"
+    },
+    "TK_Level_PV_P5": {
+      "deviceId": "TANK_P5",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3-2 CUSH 레벨 PV"
+    },
+    "TK_Temp_PV_P5": {
+      "deviceId": "TANK_P5",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3-2 CUSH 온도 PV"
+    },
+    "TK_Level_PV_I1": {
+      "deviceId": "TANK_I1",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 1 ISO 레벨 PV"
+    },
+    "TK_Temp_PV_I1": {
+      "deviceId": "TANK_I1",
+      "groupId": "temp",
+      "partName": "워킹 Tank 1 ISO 온도 PV"
+    },
+    "TK_Level_PV_I2": {
+      "deviceId": "TANK_I2",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 2-2 MDI 레벨 PV"
+    },
+    "TK_Temp_PV_I2": {
+      "deviceId": "TANK_I2",
+      "groupId": "temp",
+      "partName": "워킹 Tank 2-2 MDI 온도 PV"
+    },
+    "TK_Level_PV_I3": {
+      "deviceId": "TANK_I3",
+      "groupId": "level_l",
+      "partName": "워킹 Tank 3 ISO 레벨 PV"
+    },
+    "TK_Temp_PV_I3": {
+      "deviceId": "TANK_I3",
+      "groupId": "temp",
+      "partName": "워킹 Tank 3 ISO 온도 PV"
+    },
+    "D04700": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "HD1_P1 인젝션 ON 타이머"
+    },
+    "D04701": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "HD1_P1 인젝션 OFF 타이머"
+    },
+    "D04702": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "HD1_P2 인젝션 ON 타이머"
+    },
+    "D04703": {
+      "deviceId": "HEAD_HD1",
+      "groupId": "injection_rod",
+      "partName": "HD1_P2 인젝션 OFF 타이머"
+    },
+    "D04704": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "HD2_P1 인젝션 ON 타이머"
+    },
+    "D04705": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "HD2_P1 인젝션 OFF 타이머"
+    },
+    "D04706": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "HD2_P2 인젝션 ON 타이머"
+    },
+    "D04707": {
+      "deviceId": "HEAD_HD2",
+      "groupId": "injection_rod",
+      "partName": "HD2_P2 인젝션 OFF 타이머"
+    },
+    "D04710": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "HD3_P1 인젝션 ON 타이머"
+    },
+    "D04711": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "HD3_P1 인젝션 OFF 타이머"
+    },
+    "D04712": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "HD3_P2 인젝션 ON 타이머"
+    },
+    "D04713": {
+      "deviceId": "HEAD_HD3",
+      "groupId": "injection_rod",
+      "partName": "HD3_P2 인젝션 OFF 타이머"
+    },
+    "D04714": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "injection_rod",
+      "partName": "HD4_P1 인젝션 ON 타이머"
+    },
+    "D04715": {
+      "deviceId": "HEAD_HD4",
+      "groupId": "injection_rod",
+      "partName": "HD4_P1 인젝션 OFF 타이머"
+    },
+    "P00140": {
+      "deviceId": "CONVEYOR",
+      "groupId": "carrier_sensor",
+      "partName": "캐리어 진입 Check"
+    },
+    "P00141": {
+      "deviceId": "CONVEYOR",
+      "groupId": "carrier_sensor",
+      "partName": "캐리어진입 쉬프트 Check"
+    },
+    "P00164": {
+      "deviceId": "CONVEYOR",
+      "groupId": "carrier_sensor",
+      "partName": "Opening Zone In Detect"
+    },
+    "P00154": {
+      "deviceId": "CONVEYOR",
+      "groupId": "carrier_sensor",
+      "partName": "Closing Zone In Detect"
+    },
+    "P00451": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "carrier_sensor",
+      "partName": "전진Unit 캐리어 진입감지"
+    },
+    "P00452": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "slide_sensor",
+      "partName": "전진Unit 캐리어 정위치감지"
+    },
+    "P00450": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "carrier_sensor",
+      "partName": "전진Unit 캐리어 1번감지"
+    },
+    "P00453": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "slide_sensor",
+      "partName": "전진Unit 캐리어 후진감지"
+    },
+    "P00454": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "slide_sensor",
+      "partName": "전진Unit 캐리어 비상감지1"
+    },
+    "P00455": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "stopper_sensor",
+      "partName": "전진Unit 캐리어 스톱퍼CY 전진감지"
+    },
+    "P00456": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "stopper_sensor",
+      "partName": "전진Unit 캐리어 스톱퍼CY 후진감지"
+    },
+    "P00457": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "nozzle_sensor",
+      "partName": "전진Unit 캐리어 Air주입CY 후진감지"
+    },
+    "P00470": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "stopper_rod",
+      "partName": "전진Unit 스톱퍼 SOL"
+    },
+    "P00471": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "nozzle_rod",
+      "partName": "전진Unit 주입1,2 전후진 SOL"
+    },
+    "P00472": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "slide_rod",
+      "partName": "전진Unit 로드레스 복귀 SOL"
+    },
+    "P00473": {
+      "deviceId": "CONVEYOR_MD_FWD",
+      "groupId": "air",
+      "partName": "전진Unit 주입 SOL"
+    },
+    "P00459": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "carrier_sensor",
+      "partName": "후진Unit 캐리어 진입감지"
+    },
+    "P0045A": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "slide_sensor",
+      "partName": "후진Unit 캐리어 정위치감지"
+    },
+    "P00458": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "carrier_sensor",
+      "partName": "후진Unit 캐리어 1번감지"
+    },
+    "P0045B": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "slide_sensor",
+      "partName": "후진Unit 캐리어 후진감지"
+    },
+    "P0045C": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "slide_sensor",
+      "partName": "후진Unit 캐리어 비상감지1"
+    },
+    "P0045D": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "stopper_sensor",
+      "partName": "후진Unit 캐리어 스톱퍼CY 전진감지"
+    },
+    "P0045E": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "stopper_sensor",
+      "partName": "후진Unit 캐리어 스톱퍼CY 후진감지"
+    },
+    "P0045F": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "nozzle_sensor",
+      "partName": "후진Unit 캐리어 Air주입CY 후진감지"
+    },
+    "P00474": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "stopper_rod",
+      "partName": "후진Unit 스톱퍼 SOL"
+    },
+    "P00475": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "nozzle_rod",
+      "partName": "후진Unit 주입1,2 전후진 SOL"
+    },
+    "P00476": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "slide_rod",
+      "partName": "후진Unit 로드레스 복귀 SOL"
+    },
+    "P00477": {
+      "deviceId": "CONVEYOR_MD_REV",
+      "groupId": "air",
+      "partName": "후진Unit 주입 SOL"
+    },
+    "P00131": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "slide_sensor",
+      "partName": "Air주입Unit 캐리어 정위치감지"
+    },
+    "P00132": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "slide_sensor",
+      "partName": "Air주입Unit 캐리어 후진감지"
+    },
+    "P00133": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "slide_sensor",
+      "partName": "Air주입Unit 캐리어 비상감지1"
+    },
+    "P00134": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "stopper_sensor",
+      "partName": "Air주입Unit 캐리어 스톱퍼 전진감지"
+    },
+    "P00135": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "stopper_sensor",
+      "partName": "Air주입Unit 캐리어 스톱퍼 후진감지"
+    },
+    "P00136": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "nozzle_sensor",
+      "partName": "Air주입Unit 캐리어 Air1주입 후진감지"
+    },
+    "P00137": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "nozzle_sensor",
+      "partName": "Air주입Unit 캐리어 Air2주입 후진감지"
+    },
+    "P0028A": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "stopper_rod",
+      "partName": "Air주입Unit 스톱퍼 SOL"
+    },
+    "P0028B": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "nozzle_rod",
+      "partName": "Air주입Unit 주입1,2 전후진 SOL"
+    },
+    "P0028C": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "slide_rod",
+      "partName": "Air주입Unit 로드레스 복귀 SOL"
+    },
+    "P00243": {
+      "deviceId": "CONVEYOR_AIRBAG",
+      "groupId": "air",
+      "partName": "Air주입Unit 에어주입1,2원통 SOL"
+    }
+  }
+}

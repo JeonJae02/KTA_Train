@@ -1,5 +1,5 @@
 ﻿incident_id,domain,작업일,start_dt,device_key,model_scope,expected_reasons,설비상세,조치,작업IDs,cm,matched_episodes,match_level,lead_h,feature_shift,shift_time_ok,missed_feature,meaning_gap,reviewer,note
-C01,conveyor,2026-10-17,2026-10-17 09:30:00,CONVEYOR,애매,wagon_* (대차 28),캐리어(28번) 에어 누수,리미트 스위치 점검 및 점검,X-029,,,,,,,,,,
+C01,conveyor,2026-10-17,2026-10-17 09:30:00,CONVEYOR,애매,wagon_* (대차 28),캐리어(28번) 에어 누수,리미트 스위치 점검 및 점검,X-029,PRE,(재생) P00459 대차28 wagon_rearm 10-17 08:58~10-22 14:06,설비,0.5,"P00459 rearm 0→0.88·앞끝 0→-6 / P00451 rearm 0.24→1.79·앞끝 -1→-14 (10-17 06:55 계단, 10-22 11:34 해소)",애매,P00451 은 센서 재감지 플래그에 묶여 안 보임 → 대차 자기 기록 대비 변화 피처 필요. 에어 누수 자체(압력)는 태그 없음,"경고 ""떨어진 이물/채터링"" vs 현장 ""에어 누수·리미트 스위치"". 데이터는 매 통과 같은 자리의 고정 돌출물. 점검 후에도 지속, 10-22 기록 없이 해소",claude,cases/C01.md · 현장 확인 5건 요청
 C02,conveyor,2026-10-26,2026-10-26 11:00:00,CONVEYOR,애매,wagon_* (대차 18),캐리어 ( 18번 LH ),에어누수로 인한 에어백점검 및 확인,G-02-003,,,,,,,,,,
 C03,conveyor,2026-10-31,2026-10-31 12:00:00,CONVEYOR,예,sensor_rearm;sensor_shift;wagon_rearm;wagon_debris_*;air_time_slow (P00451·md_fwd),40~4번 대차 중형 전진 센서 에러 / 중형 전진 에어주입장치 센서 에러 / 2라인 중형 전진 대차번호 이상 에러 6회 발생; 2라인 기존 센서 및 브라켓 위치 조정 → 라인 정상동작,점검 / 기존 센서 및 브라켓 위치 조정,G-02-018;G-02-021;M-02-04-2-3,,,,,,,,,,
 C04,conveyor,2026-10-31,2026-10-31 09:00:00,CONVEYOR,애매,drive_speed (같은 구동계라면),오버헤드 행거 에러,체인 텐션 점검 및 조치,G-02-017,,,,,,,,,,
