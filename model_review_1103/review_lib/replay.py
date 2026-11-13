@@ -16,16 +16,32 @@ import pandas as pd
 from . import backend
 
 
-def pump_cycles(raw, pumps=None, progress=True, version="v2.1"):
+#: 사이클 원값 (물리 단위) — raw=True 일 때 판정 기록에 붙인다
+PUMP_RAW_KEYS = ["SV_class", "Hz", "T_C", "mu_rel", "FT", "PT", "P0", "FT_Hz", "FT_SV", "Hz_SV", "K", "FT_e",
+                 "pump_resid", "r_phys", "t_self", "decel_half_sec", "release_half_sec", "ft_cv", "pt_std",
+                 "steady_src", "n_hz_levels", "duration_sec"]
+
+
+def pump_cycles(raw, pumps=None, progress=True, version="v2.1", keep_raw=False):
     """펌프 사이클 한 행 = 한 판정. zn_<피처> 열이 오토인코더 입력 피처의 정규화 값.
 
     mode: 자동 운전 / 판정 범위 밖 / 수집 간격 / 점검·수동 / 알람 / 유량 없음
     (자동 운전만 창 판정·경보로 이어진다)
+    keep_raw=True 면 PUMP_RAW_KEYS 원값(유량·압력·잔차 % 등)을 raw_<이름> 열로 같이 낸다.
     """
     backend.use(version)                      # 펌프 코드는 두 버전이 같다
     with redirect_stdout(StringIO()):
         from tools_yeji.pump_models.pump_realtime import PumpRealtimeGroup
-        grp = PumpRealtimeGroup(pumps=pumps, keep_cycles=None)
+        from tools_yeji.pump_models.pump_preprocess import add_baseline_features
+
+        class RawGroup(PumpRealtimeGroup):
+            def _on_cycle(self, p, cy, t):
+                super()._on_cycle(p, cy, t)
+                if keep_raw:
+                    f = add_baseline_features(cy, self.base[p]) if cy.get("FT", 0) > 0 else cy
+                    self.cycles[-1].update({f"raw_{k}": f.get(k) for k in PUMP_RAW_KEYS})
+
+        grp = RawGroup(pumps=pumps, keep_cycles=None)
     cols = [c for c in raw.columns if c != "source"]
     vals = raw[cols].to_numpy(dtype=object)
     n = len(raw)
