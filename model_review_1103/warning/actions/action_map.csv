@@ -1,28 +1,29 @@
-작업ID,incident_id,domain,device_key,sub_unit,wagon_no,model_scope,expected_reasons,map_note
-X-029,C01,conveyor,CONVEYOR,wagon,28,아니오,(없음 — 에어 누수 신호 미수집),"캐리어 에어 누수. 에어 누수 신호는 수집 안 됨 (P0016F 에어백 상승 L/S 항상 0, 2020 알람 제거). 재생상 대차28 후진 진입 센서 형상 변화는 같은 날 있었으나 다른 2라인 누수 4건엔 없음 → 별개 현상. cases/C01.md"
-G-02-003,C02,conveyor,CONVEYOR,wagon,18,아니오,(없음 — 에어 누수 신호 미수집),캐리어 18번 LH 에어백 누수. C01과 같은 종류 — 에어 누수 신호 없음(P0016F 0 고정). 에어백 유닛 주입 시간(속도 보정)도 10-26에 평소 흔들림 안(C01 5-1). 대차18 형상 변화가 있는지만 확인
-G-02-018,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;wagon_debris_*;air_time_slow (P00451·md_fwd),40~4번 대차 중형 전진 센서 에러. 데이터: PLC 알람 110 전진 대차번호 이상 = 1번 대차에서 P00451 두 번 감지(P00450이 2회 방지를 풂). 10-30 1·10-31 10회. 모델 W0069(P00451 센서 재감지 → 센서 감지 거리·위치 확인) TP. cases/C03.md
-G-02-021,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;air_time_slow (P00451·md_fwd),같은 날 같은 증상 — C03으로 묶음. 점검 뒤(14:13~16:28)에도 불일치 6회 더 남
-M-02-04-2-3,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_shift;sensor_rearm (P00451),"기계실 기록. 센서·브라켓 위치 조정 = 데이터상 10-31 16:29~16:39 (P00451 재감지율 0.22→0.05, 1번 대차 이중 감지 이후 0). 일지 '6회' vs 데이터 10회. 공무반 G-02-018·021과 같은 사건"
-G-02-017,C04,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),오버헤드(제품 이송) 행거 체인 텐션. 행거는 2라인 PLC 밖 설비(태그·IL에 없음) → 모델범위 밖. 점검 중 2라인은 계속 운전. cases/C04.md
-M-02-02-2-5,C05,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),"행거 구동부 체인 이탈. 2라인은 알람 없이 17:13~18:26, 20:52~21:23 정지(작업자 정지). 행거 신호 없음 → 모델범위 밖. 같은 시간대 W0205 구동부 경고는 재가동 과도. cases/C05.md"
-G-01-006,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),1-2 POL 매터링 펌프 압력 안 걸림 → 교체. 1-2 POL = HD1 slot2 = P2 (데이터로 확인: 10-19 05:28 P2만 지령 ON·트립 0·흡입 정상인데 순환 유량 5%). 교체 06:12~06:34(흡입 스위치 OFF). 원료는 일지 표기(ST-242)가 맞다. cases/P01.md
-M-01-02-2,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),기계실 기록. 공무반 G-01-006과 같은 사건(중복의심=예)
-M-01-02-3-2,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),4번 헤드 POL IN/OUT 호스 누수 → 교체. 원문 24:40 = 10/20 00:40. HD4 POL = P7(4펌프 CUSH)
-G-01-010,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),공무반 기록. 기계실 M-01-02-3-2와 같은 사건(중복의심=예)
-G-02-004,P03,pump,HEAD_HD4,,,애매,injection_time (HD4);pump_head_resistance_* (P7·I7),믹싱헤드 4번 유압유 누수 → 샤프트몸통 오링·하우징볼트 교체. 유압 계통은 원료 압력과 별개라 펌프 지표에 안 보일 수 있음
-M-02-05-2,P04,pump,PUMP_P7|PUMP_I7|HEAD_HD4,,,애매,pump_head_resistance_*;pump_line_resistance_* (P7·I7),4번 헤드 인젝션 OUT 니플 교체. POL·ISO 어느 쪽 니플인지 미기재
-X-024,E01,etc,온조기_10,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),"온조기(10번) 히터 고장 점검. 온조기는 topology에 없음 → 우리 탱크 모델 대상인지, 별도 설비인지 확인 필요"
-X-027,E01,etc,온조기_10,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 히터 교체 — E01로 묶음
-G-02-016,E02,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),온조기(1번) TR 고장 점검
-G-02-023,E02,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 TR 교체 — E02로 묶음
-G-02-030,E03,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),온조기(1번) 펌프 누수 점검. E02(10/31 TR) 이틀 뒤 같은 장비
-G-02-033,E03,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 온조기 교체 — E03으로 묶음
-G-02-038,E04,etc,온조기_SP,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),S/P 온조기 펌프 누수 → 펌프 교체. S/P가 무엇인지 확인 필요
-M-05-02-2,C06,conveyor,CONVEYOR,wagon,35,예,"wagon_rearm;wagon_debris_front (P00451·P00164, 대차 35)",35번 캐리어 오프닝 앞쪽 슬라이드 → 하차·교체(11-12 06:50~07:03). 06:30 와이어 스위치 정지 때 35번이 오프닝 위치. P00451 35번 재감지 11-10 07시 시작 → 교체 뒤 0. 엣지 W0274가 11-10 12:47부터 35번 포함
-G-03-020,C07,conveyor,CONVEYOR,wagon,23,아니오,(없음 — 에어 누수 신호 미수집),"캐리어 23번 에어백 에어샘 점검(11-13 10:50~11:30, 점심 정지 중). C01·C02와 같은 종류 — 에어 누수 신호 없음(P0016F 0 고정)"
-G-03-013,C08,conveyor,CONVEYOR,wagon,,아니오,(없음 — 라인 밖 예비 캐리어),"S/P 캐리어 고정 핀 브라켓 파손 점검(11-11 09:00~09:30, 정기점검 정지 중). 'S/P'=예비(Spare): 일지에 'S/P 캐리어 크랙 → 용접' 9월부터 20회 가까이, 'S/P 컴프레셔 전환'. 11-11 전후 여러 센서가 한꺼번에 바뀐 대차 없음 → 라인에 넣은 흔적 없음"
-G-03-025,C09,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),행거 감속기 누유 → 체인 청소(11-14 14:00~14:30). 2라인은 13:40~15:23 계속 운전. C04·C05와 같은 설비
-G-03-032,C10,conveyor,CONVEYOR,drive,,아니오,(없음 — 2라인 컨베이어 아님으로 보임),"컨베이어 변압기 고장 → 점프(11-16 10:50~12:00, 라인 미기재). 2라인은 점심 정지 뒤 11:22 재가동, 작업은 12:00까지 → 2라인 대차 컨베이어 아님. 같은 날 1·3라인 진공 크라싱 컨베이어 고장 기록"
-G-03-026,P05,pump,PUMP_P6|HEAD_HD3,,,예,pump_line_resistance_low;pump_head_resistance_low (P6),"3번 헤드 POL IN 호스 터짐 → 교체(11-14 12:45~13:05). 공무반은 '3-1', 기계실은 '3-2'. 데이터: HD3 펌프 넷 12:47:30~13:08 정지, 정지 중 P6만 압력 1(야간 정지 땐 3) → P6(3-2 POL) 라인 개방. 교체 전후 저항 그대로"
-M-05-01-4,P05,pump,PUMP_P6|HEAD_HD3,,,예,pump_line_resistance_low (P6),"기계실 기록(작업일 미기재, 12:45~13:10, 호스 교체 및 금형 청소). 공무반 G-03-026과 같은 사건으로 묶음 — 시각 일치, 데이터로 P6 확인"
+작업ID,incident_id,domain,device_key,sub_unit,wagon_no,model_scope,expected_reasons,map_note,chain
+X-029,C01,conveyor,CONVEYOR,wagon,28,아니오,(없음 — 에어 누수 신호 미수집),"캐리어 에어 누수. 에어 누수 신호는 수집 안 됨 (P0016F 에어백 상승 L/S 항상 0, 2020 알람 제거). 재생상 대차28 후진 진입 센서 형상 변화는 같은 날 있었으나 다른 2라인 누수 4건엔 없음 → 별개 현상. cases/C01.md",
+G-02-003,C02,conveyor,CONVEYOR,wagon,18,아니오,(없음 — 에어 누수 신호 미수집),캐리어 18번 LH 에어백 누수. C01과 같은 종류 — 에어 누수 신호 없음(P0016F 0 고정). 에어백 유닛 주입 시간(속도 보정)도 10-26에 평소 흔들림 안(C01 5-1). 대차18 형상 변화가 있는지만 확인,
+G-02-018,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;wagon_debris_*;air_time_slow (P00451·md_fwd),40~4번 대차 중형 전진 센서 에러. 데이터: PLC 알람 110 전진 대차번호 이상 = 1번 대차에서 P00451 두 번 감지(P00450이 2회 방지를 풂). 10-30 1·10-31 10회. 모델 W0069(P00451 센서 재감지 → 센서 감지 거리·위치 확인) TP. cases/C03.md,
+G-02-021,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_rearm;sensor_shift;wagon_rearm;air_time_slow (P00451·md_fwd),같은 날 같은 증상 — C03으로 묶음. 점검 뒤(14:13~16:28)에도 불일치 6회 더 남,
+M-02-04-2-3,C03,conveyor,CONVEYOR,md_fwd,,예,sensor_shift;sensor_rearm (P00451),"기계실 기록. 센서·브라켓 위치 조정 = 데이터상 10-31 16:29~16:39 (P00451 재감지율 0.22→0.05, 1번 대차 이중 감지 이후 0). 일지 '6회' vs 데이터 10회. 공무반 G-02-018·021과 같은 사건",
+G-02-017,C04,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),오버헤드(제품 이송) 행거 체인 텐션. 행거는 2라인 PLC 밖 설비(태그·IL에 없음) → 모델범위 밖. 점검 중 2라인은 계속 운전. cases/C04.md,행거
+M-02-02-2-5,C05,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),"행거 구동부 체인 이탈. 2라인은 알람 없이 17:13~18:26, 20:52~21:23 정지(작업자 정지). 행거 신호 없음 → 모델범위 밖. 같은 시간대 W0205 구동부 경고는 재가동 과도. cases/C05.md",행거
+G-01-006,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),1-2 POL 매터링 펌프 압력 안 걸림 → 교체. 1-2 POL = HD1 slot2 = P2 (데이터로 확인: 10-19 05:28 P2만 지령 ON·트립 0·흡입 정상인데 순환 유량 5%). 교체 06:12~06:34(흡입 스위치 OFF). 원료는 일지 표기(ST-242)가 맞다. cases/P01.md,
+M-01-02-2,P01,pump,PUMP_P2|HEAD_HD1,,,예,pump_pump_output_low;pump_response_change;pump_pattern (P2),기계실 기록. 공무반 G-01-006과 같은 사건(중복의심=예),
+M-01-02-3-2,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),4번 헤드 POL IN/OUT 호스 누수 → 교체. 원문 24:40 = 10/20 00:40. HD4 POL = P7(4펌프 CUSH),HD4_원료
+G-01-010,P02,pump,PUMP_P7|HEAD_HD4,,,예,pump_line_resistance_low;pump_head_resistance_low (P7),공무반 기록. 기계실 M-01-02-3-2와 같은 사건(중복의심=예),HD4_원료
+G-02-004,P03,pump,HEAD_HD4,,,애매,injection_time (HD4);pump_head_resistance_* (P7·I7),믹싱헤드 4번 유압유 누수 → 샤프트몸통 오링·하우징볼트 교체. 유압 계통은 원료 압력과 별개라 펌프 지표에 안 보일 수 있음,HD4_유압
+M-02-05-2,P04,pump,PUMP_P7|PUMP_I7|HEAD_HD4,,,애매,pump_head_resistance_*;pump_line_resistance_* (P7·I7),4번 헤드 인젝션 OUT 니플 교체. POL·ISO 어느 쪽 니플인지 미기재,HD4_원료
+X-024,E01,etc,온조기_10,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),"온조기(10번) 히터 고장 점검. 온조기는 topology에 없음 → 우리 탱크 모델 대상인지, 별도 설비인지 확인 필요",
+X-027,E01,etc,온조기_10,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 히터 교체 — E01로 묶음,
+G-02-016,E02,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),온조기(1번) TR 고장 점검,
+G-02-023,E02,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 TR 교체 — E02로 묶음,
+G-02-030,E03,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),온조기(1번) 펌프 누수 점검. E02(10/31 TR) 이틀 뒤 같은 장비,
+G-02-033,E03,etc,온조기_1,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),같은 날 온조기 교체 — E03으로 묶음,
+G-02-038,E04,etc,온조기_SP,,,아니오,(없음 — 금형 온도 미기록: K00036 금형온도 CHK 사용 = 0),S/P 온조기 펌프 누수 → 펌프 교체. S/P가 무엇인지 확인 필요,
+M-05-02-2,C06,conveyor,CONVEYOR,wagon,35,예,"wagon_rearm;wagon_debris_front (P00451·P00164, 대차 35)",35번 캐리어 오프닝 앞쪽 슬라이드 → 하차·교체(11-12 06:50~07:03). 06:30 와이어 스위치 정지 때 35번이 오프닝 위치. P00451 35번 재감지 11-10 07시 시작 → 교체 뒤 0. 엣지 W0274가 11-10 12:47부터 35번 포함,
+G-03-020,C07,conveyor,CONVEYOR,wagon,23,아니오,(없음 — 에어 누수 신호 미수집),"캐리어 23번 에어백 에어샘 점검(11-13 10:50~11:30, 점심 정지 중). C01·C02와 같은 종류 — 에어 누수 신호 없음(P0016F 0 고정)",
+G-03-013,C08,conveyor,CONVEYOR,wagon,,아니오,(없음 — 라인 밖 예비 캐리어),"S/P 캐리어 고정 핀 브라켓 파손 점검(11-11 09:00~09:30, 정기점검 정지 중). 'S/P'=예비(Spare): 일지에 'S/P 캐리어 크랙 → 용접' 9월부터 20회 가까이, 'S/P 컴프레셔 전환'. 11-11 전후 여러 센서가 한꺼번에 바뀐 대차 없음 → 라인에 넣은 흔적 없음",
+G-03-025,C09,conveyor,CONVEYOR,hanger,,아니오,(없음 — 행거는 2라인 PLC 밖),행거 감속기 누유 → 체인 청소(11-14 14:00~14:30). 2라인은 13:40~15:23 계속 운전. C04·C05와 같은 설비,행거
+G-03-032,C10,conveyor,CONVEYOR,drive,,아니오,(없음 — 2라인 컨베이어 아님으로 보임),"컨베이어 변압기 고장 → 점프(11-16 10:50~12:00, 라인 미기재). 2라인은 점심 정지 뒤 11:22 재가동, 작업은 12:00까지 → 2라인 대차 컨베이어 아님. 같은 날 1·3라인 진공 크라싱 컨베이어 고장 기록",
+G-03-026,P05,pump,PUMP_P6|HEAD_HD3,,,예,pump_line_resistance_low;pump_head_resistance_low (P6),"3번 헤드 POL IN 호스 터짐 → 교체(11-14 12:45~13:05). 공무반은 '3-1', 기계실은 '3-2'. 데이터: HD3 펌프 넷 12:47:30~13:08 정지, 정지 중 P6만 압력 1(야간 정지 땐 3) → P6(3-2 POL) 라인 개방. 교체 전후 저항 그대로",
+M-05-01-4,P05,pump,PUMP_P6|HEAD_HD3,,,예,pump_line_resistance_low (P6),"기계실 기록(작업일 미기재, 12:45~13:10, 호스 교체 및 금형 청소). 공무반 G-03-026과 같은 사건으로 묶음 — 시각 일치, 데이터로 P6 확인",
+M-05-01-2,P06,pump,HEAD_HD4,,,아니오,(없음 — 유압 계통 미수집: 유압4 압력 스위치 비트만),4번 헤드 유압 OUT 호스 교체(11-13 08:20~08:33). 데이터: HD4 08:15~08:30 사출 멈춤. 유압4 Low/High 비율·트립·인젝션 ON/OFF 시간 앞뒤 같음. P03(10-27 유압유 누수)과 같은 유압 계통 → 사슬 HD4_유압,HD4_유압

@@ -1,0 +1,163 @@
+﻿episode_id,key,onset,reasons,cm,fp_cause,패턴
+W0064,drive,2026-10-26 06:19:05.750,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0070,P00164:wagons,2026-10-26 07:06:19.433,wagon_rearm;wagon_debris_front,FIELD_CHECK,현장놓침의심,강한 패턴
+W0069,P00451,2026-10-26 07:06:19.433,sensor_rearm,TP,,실제 TP
+W0071,P00140:wagons,2026-10-26 07:07:19.486,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0073,P00459:wagons,2026-10-26 07:09:20.329,wagon_rearm;wagon_debris_back,HOLD,데이터결측,비패턴 · 기타 실제 변화/보류
+W0075,P00154:wagons,2026-10-26 07:19:22.768,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0078,P00141:wagons,2026-10-26 08:42:42.288,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0080,drive,2026-10-26 11:27:39.638,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0081,md_fwd,2026-10-26 14:38:35.787,air_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0082,md_rev,2026-10-26 14:38:35.787,stop_fwd_time_slow;stop_rev_time_slow,HOLD,,비패턴 · 기타 실제 변화/보류
+W0084,P00141:wagons,2026-10-26 17:12:20.818,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0086,P00141:wagons,2026-10-27 00:20:38.056,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0087,drive,2026-10-27 06:21:00.814,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0092,P00154:wagons,2026-10-27 07:11:25.491,wagon_debris_front;wagon_rearm,HOLD,,약한 패턴
+W0095,P00140:wagons,2026-10-27 09:09:58.223,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0098,P00459:wagons,2026-10-27 12:19:51.954,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0101,P00140:wagons,2026-10-27 23:23:01.447,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0108,P00140:wagons,2026-10-28 13:43:05.507,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0109,P00141:wagons,2026-10-28 15:04:29.484,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0112,drive,2026-10-28 19:51:05.606,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0114,md_fwd,2026-10-28 20:15:11.370,air_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0116,P00459:wagons,2026-10-28 22:00:43.304,wagon_debris_back,FIELD_CHECK,현장놓침의심,강한 패턴
+W0117,P00140:wagons,2026-10-28 22:49:57.490,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0118,drive,2026-10-29 00:36:25.389,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0125,P00141:wagons,2026-10-29 07:50:18.759,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0128,P00154:wagons,2026-10-29 09:02:37.454,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0129,P00459:wagons,2026-10-29 09:19:42.967,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0131,drive,2026-10-29 11:27:16.767,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0133,P00459:wagons,2026-10-29 13:59:58.731,wagon_debris_back;wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0134,airbag,2026-10-29 15:40:29.355,stop_rev_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0136,P00141:wagons,2026-10-29 20:06:51.625,wagon_debris_front;wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0138,P00140:wagons,2026-10-29 20:59:03.394,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0140,P00459:wagons,2026-10-29 21:36:13.948,wagon_rearm;wagon_debris_back,FIELD_CHECK,현장놓침의심,강한 패턴
+W0141,P00154:wagons,2026-10-30 00:11:57.507,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0145,drive,2026-10-30 11:30:26.224,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0146,P00140:wagons,2026-10-30 11:37:28.017,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0147,P00141:wagons,2026-10-30 13:57:04.615,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0148,md_fwd,2026-10-30 14:42:15.605,air_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0151,P00141:wagons,2026-10-30 18:04:11.890,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0153,P00140:wagons,2026-10-30 19:13:30.663,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0154,drive,2026-10-30 19:52:59.661,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0155,P00154:wagons,2026-10-30 20:47:15.810,wagon_debris_front,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0156,P00459:wagons,2026-10-30 20:51:16.835,wagon_rearm;wagon_debris_back,FIELD_CHECK,현장놓침의심,강한 패턴
+W0157,P00154:wagons,2026-10-30 23:58:14.815,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0165,P00141:wagons,2026-10-31 12:07:57.183,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0166,P00140:wagons,2026-10-31 14:02:42.256,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0167,drive,2026-10-31 15:20:04.708,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0168,airbag,2026-10-31 15:42:11.621,nozzle_rev_time_1_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0169,P00141:wagons,2026-10-31 17:09:35.775,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0170,P00154:wagons,2026-10-31 20:20:54.793,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0171,P00451:wagons,2026-10-31 20:25:56.340,wagon_debris_front,HOLD,,강한 패턴
+W0172,P00141:wagons,2026-10-31 23:35:57.287,wagon_debris_back,HOLD,,비패턴 · 기타 실제 변화/보류
+W0173,drive,2026-11-01 00:34:41.382,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0181,P00141:wagons,2026-11-02 09:07:18.957,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0182,drive,2026-11-02 11:17:58.754,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0183,P00154:wagons,2026-11-02 13:55:50.455,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0185,drive,2026-11-02 19:58:14.643,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0188,P00154:wagons,2026-11-02 20:43:26.419,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0189,P00451,2026-11-02 22:26:52.529,sensor_rearm,HOLD,,약한 패턴
+W0191,drive,2026-11-03 06:16:36.788,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0192,P00140:wagons,2026-11-03 06:25:40.939,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0195,P00141:wagons,2026-11-03 07:29:59.317,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0197,P00459:wagons,2026-11-03 08:02:08.766,wagon_debris_back;wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0198,P00154:wagons,2026-11-03 08:16:12.970,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0202,P00141:wagons,2026-11-03 14:39:23.006,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0203,P00451:wagons,2026-11-03 14:53:26.355,wagon_rearm,HOLD,,강한 패턴
+W0204,P00140:wagons,2026-11-03 15:18:31.650,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0205,drive,2026-11-03 18:29:22.972,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0206,airbag,2026-11-03 18:47:28.610,stop_rev_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0207,P00140:wagons,2026-11-03 20:36:26.911,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0208,P00451:wagons,2026-11-03 20:41:27.864,wagon_rearm,HOLD,,강한 패턴
+W0209,P00141:wagons,2026-11-03 20:50:30.023,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0212,P00154:wagons,2026-11-03 23:43:21.762,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0213,P00459:wagons,2026-11-04 00:01:27.445,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0217,P00140:wagons,2026-11-04 07:37:54.036,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0219,P00141:wagons,2026-11-04 11:25:00.962,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0223,P00451,2026-11-04 15:17:10.326,sensor_rearm,HOLD,,약한 패턴
+W0224,P00451:wagons,2026-11-04 17:44:52.590,wagon_rearm,HOLD,,강한 패턴
+W0228,drive,2026-11-05 06:11:07.148,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0232,P00140:wagons,2026-11-05 07:09:25.261,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0237,P00154:wagons,2026-11-05 07:43:34.347,wagon_debris_front,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0239,P00459:wagons,2026-11-05 08:23:45.562,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0240,drive,2026-11-05 11:19:40.804,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0242,P00141:wagons,2026-11-05 12:26:56.908,wagon_debris_back,HOLD,,비패턴 · 기타 실제 변화/보류
+W0244,P00140:wagons,2026-11-05 16:24:04.208,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0245,P00154:wagons,2026-11-05 16:41:09.083,wagon_debris_front;wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0247,drive,2026-11-05 19:58:08.862,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0248,P00459:wagons,2026-11-05 20:47:22.292,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0249,P00141:wagons,2026-11-06 00:31:31.623,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0250,drive,2026-11-06 00:52:37.312,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0254,P00154:wagons,2026-11-06 08:22:38.610,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0257,P00141:wagons,2026-11-06 10:36:13.960,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0258,drive,2026-11-06 11:15:03.335,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0261,P00140:wagons,2026-11-06 13:05:35.152,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0262,airbag,2026-11-06 15:16:14.934,nozzle_rev_time_1_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0263,P00140:wagons,2026-11-06 16:15:31.138,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0264,P00141:wagons,2026-11-06 16:59:15.197,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0266,CONVEYOR_MD_FWD:slide_sensor,2026-11-06 17:25:01.376,air_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0265,P00474,2026-11-06 17:25:01.376,stop_rev_time_slow,HOLD,,비패턴 · 기타 실제 변화/보류
+W0272,P00141:wagons,2026-11-06 19:16:53.546,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0273,P00154:wagons,2026-11-06 19:17:53.666,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0275,P00164:wagons,2026-11-06 20:14:36.803,wagon_debris_front;wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0274,P00451:wagons,2026-11-06 20:14:36.803,wagon_rearm,TP,,실제 TP
+W0276,P00459:wagons,2026-11-06 20:20:38.844,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0282,CONVEYOR_MD_REV:slide_sensor,2026-11-07 06:00:09.050,catch_cnt_distance,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0283,P0028B,2026-11-07 06:00:09.050,nozzle_rev_time_1_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0284,CONVEYOR:drive,2026-11-07 08:04:43.870,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0286,P00140:wagons,2026-11-07 10:50:23.459,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0287,P00154:wagons,2026-11-07 11:17:30.851,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0288,P00141:wagons,2026-11-08 14:13:59.121,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0297,P00140:wagons,2026-11-09 07:54:18.487,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0299,P00154:wagons,2026-11-09 12:38:43.124,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0301,CONVEYOR_MD_FWD:slide_sensor,2026-11-09 14:50:20.469,air_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0303,P0028A,2026-11-09 15:19:29.831,stop_fwd_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0304,P00140:wagons,2026-11-09 18:01:19.513,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0305,P00141:wagons,2026-11-09 18:59:34.456,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0307,P00154:wagons,2026-11-09 23:31:30.703,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0308,CONVEYOR:drive,2026-11-10 00:36:03.850,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0309,P00141:wagons,2026-11-10 06:39:55.382,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0315,P00141:wagons,2026-11-10 12:12:25.345,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0318,P00451,2026-11-10 15:05:11.979,sensor_rearm,HOLD,,약한 패턴
+W0319,P00470,2026-11-10 15:20:15.700,stop_fwd_start_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0320,P0028A,2026-11-10 15:21:16.489,stop_rev_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0323,CONVEYOR:drive,2026-11-10 19:57:39.224,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0326,P00141:wagons,2026-11-10 21:10:58.599,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0327,P00474,2026-11-10 21:59:12.808,stop_rev_time_slow,HOLD,,비패턴 · 기타 실제 변화/보류
+W0328,CONVEYOR:drive,2026-11-11 00:50:00.310,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0398,P00451,2026-11-11 13:02:42.909,sensor_rearm,HOLD,,약한 패턴
+W0399,P00154:wagons,2026-11-11 13:45:55.427,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0401,P00140:wagons,2026-11-11 14:58:14.674,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0402,P00141:wagons,2026-11-11 16:28:41.284,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0332,P0028B,2026-11-11 18:08:09.639,nozzle_rev_time_1_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0403,P00451,2026-11-11 18:44:20.642,sensor_rearm,HOLD,,약한 패턴
+W0404,CONVEYOR:drive,2026-11-11 20:07:25.691,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0406,P0028A,2026-11-11 20:27:31.525,stop_fwd_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0407,P00154:wagons,2026-11-11 20:58:41.090,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0333,CONVEYOR:drive,2026-11-12 06:25:24.591,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0340,CONVEYOR:drive,2026-11-12 11:27:49.967,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0341,P00459:wagons,2026-11-12 12:15:03.522,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0343,P00154:wagons,2026-11-12 12:43:10.682,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0344,P0028A,2026-11-12 15:45:06.364,stop_fwd_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0345,P00141:wagons,2026-11-12 16:11:13.801,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0348,P00140:wagons,2026-11-12 21:10:11.110,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0349,CONVEYOR:drive,2026-11-13 00:38:10.004,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0355,P00154:wagons,2026-11-13 11:40:09.467,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0356,P00459:wagons,2026-11-13 11:40:09.467,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0358,CONVEYOR_MD_REV:slide_sensor,2026-11-13 15:35:15.444,catch_cnt_distance,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0359,P00141:wagons,2026-11-13 15:40:16.592,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0360,P00451,2026-11-13 18:10:02.888,sensor_rearm,HOLD,,약한 패턴
+W0361,P00140:wagons,2026-11-13 18:32:09.905,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0363,CONVEYOR:drive,2026-11-13 19:57:32.925,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0365,CONVEYOR:drive,2026-11-14 06:17:20.035,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0372,P00140:wagons,2026-11-14 09:39:21.725,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0373,P00141:wagons,2026-11-14 10:00:27.420,wagon_debris_front,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0375,P00154:wagons,2026-11-14 12:45:19.118,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0377,P0028A,2026-11-14 15:57:14.871,stop_rev_time_slow,FP,모델과민,비패턴 · 유닛 기준·측정 차이 (C-07)
+W0380,P00141:wagons,2026-11-14 17:08:35.102,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0381,P00459:wagons,2026-11-14 17:55:49.016,wagon_rearm,FIELD_CHECK,현장놓침의심,강한 패턴
+W0383,CONVEYOR:drive,2026-11-14 20:13:32.490,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
+W0384,P00451,2026-11-14 21:10:48.588,sensor_rearm,HOLD,,약한 패턴
+W0385,P00140:wagons,2026-11-14 23:02:15.568,wagon_debris_back,FP,모델과민,비패턴 · 켜짐 길이 흔들림 (C-04)
+W0386,CONVEYOR:drive,2026-11-15 00:50:58.803,drive_speed,FP,재가동과도,비패턴 · 재가동 과도 (C-06)
