@@ -11,6 +11,7 @@
 from contextlib import redirect_stdout
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 
 from . import backend
@@ -171,14 +172,18 @@ def conveyor_core(raw, version="v2.2", history=None, eval_every="15min", progres
     return P, pd.DataFrame(evals), core
 
 
-#: 유닛 → 그 유닛의 캐리어 진입감지 센서 (코어 센서). 유닛 사이클을 대차에 붙일 때 쓴다
-UNIT_ENTRY = {"md_fwd": "P00451", "md_rev": "P00459"}
+#: 유닛 → 그 유닛 사이클을 일으키는 코어 센서. 유닛 사이클을 대차에 붙일 때 쓴다
+#: - 전진·후진: 그 유닛의 캐리어 진입감지
+#: - 에어백: 자기 진입 센서(P00130)는 늘 0이고 PLC 로직에서도 빠져 있다(`LOAD P00130 AND _OFF`).
+#:   대신 클로징 진입 P00154에서 0으로 돌아가는 엔코더 카운터 R00050이 82~85일 때 스톱퍼를 낸다
+#:   (`Air_Supply_Unit.il` 1~25줄) → 직전 P00154 통과의 대차가 그 사이클의 대차다. 매칭은 attach_check()로 확인한다.
+UNIT_ENTRY = {"md_fwd": "P00451", "md_rev": "P00459", "airbag": "P00154"}
 
 
-def attach_wagon(cycles, passes, unit, max_lag="60s"):
-    """유닛 사이클마다 직전 진입감지 통과의 대차 번호를 붙인다 (lag = 통과 → 스톱퍼 SOL ON).
+def attach_wagon(cycles, passes, unit, max_lag="60s", shift=0):
+    """유닛 사이클마다 직전 진입 센서 통과의 대차 번호를 붙인다 (lag = 통과 → 스톱퍼 SOL ON).
 
-    에어백 유닛은 코어에 진입 센서가 없어 붙이지 않는다. lag 분포가 한 덩어리인지 먼저 확인한다.
+    lag 분포가 한 덩어리인지 먼저 확인한다. shift 는 대차 번호를 n대 밀어 보는 확인용(정답이면 0).
     """
     c = cycles[cycles["unit"] == unit].sort_values("t").copy()
     p = passes[passes["sensor"] == UNIT_ENTRY[unit]].sort_values("t")[["t", "wagon"]].rename(columns={"t": "t_pass"})
@@ -187,7 +192,24 @@ def attach_wagon(cycles, passes, unit, max_lag="60s"):
     out = pd.merge_asof(c, p, left_on="t", right_on="t_pass", direction="backward",
                         tolerance=pd.Timedelta(max_lag))
     out["lag_s"] = (out["t"] - out["t_pass"]).dt.total_seconds()
+    if shift:
+        out["wagon"] = (out["wagon"] - 1 + shift) % 42 + 1
     return out
+
+
+def attach_check(cycles, passes, unit, col, shifts=range(-3, 4)):
+    """대차 매칭이 맞는지 본다 — 대차 고유의 값(예: 끌림 거리)은 날이 바뀌어도 대차마다 같아야 한다.
+
+    shift 마다 '대차별 일평균'의 날짜 간 상관(중앙값)을 낸다. 맞는 매칭(shift=0)에서 가장 높아야 한다.
+    """
+    rows = []
+    for s in shifts:
+        a = attach_wagon(cycles, passes, unit, shift=s)
+        a["day"] = (a["t"] - pd.Timedelta(hours=6)).dt.date
+        piv = a.groupby(["day", "wagon"])[col].mean().unstack("day")
+        corr = piv.corr().where(lambda m: ~np.eye(len(m), dtype=bool)).stack()
+        rows.append({"shift": s, "날짜간_상관_중앙값": float(corr.median()) if len(corr) else np.nan})
+    return pd.DataFrame(rows)
 
 
 def pump_daily(cyc, feats=None):
