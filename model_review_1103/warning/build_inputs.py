@@ -34,6 +34,15 @@ def build_actions():
     extra_ids = set(amap["작업ID"]) - set(filt["작업ID"])
     extra = whole[whole["작업ID"].isin(extra_ids)][A.KEEP_COLS].copy()
     extra["sheet_src"] = "전체"
+    # filtering.xlsx 이후에 들어온 일지(11-09 ~)는 최신 전체 업무 CSV에서. 같은 작업ID가 여러 라인이면 2라인 행
+    late_ids = extra_ids - set(extra["작업ID"])
+    if late_ids:
+        j = pd.read_csv(paths.JOURNAL_CSV, encoding="utf-8-sig", dtype={"작업ID": str, "라인번호": str})
+        j["작업일"] = pd.to_datetime(j["작업일"], format="%Y-%m-%d", errors="coerce")
+        j = j[j["작업ID"].isin(late_ids)].assign(_l2=lambda d: d["라인번호"].ne("2"))
+        j = j.sort_values(["작업ID", "_l2"]).drop_duplicates("작업ID")[A.KEEP_COLS].copy()
+        j["sheet_src"] = "전체업무CSV"
+        extra = pd.concat([extra, j], ignore_index=True)
     extra["sheet_domain"] = None
     df = pd.concat([filt, extra], ignore_index=True)
 
