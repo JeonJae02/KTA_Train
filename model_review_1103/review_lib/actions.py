@@ -2,6 +2,7 @@
 
 규칙
 - 한글 열 = 일지 원본 그대로. 영문 열 = 우리가 붙인 것.
+- 수동 선별은 원본 xlsx를 사용하고, 추가 후보는 최신 전체 업무 CSV에서 찾는다.
 - 원본 xlsx 는 고치지 않는다. 사람 판단(설비키·모델범위·사건 묶음)은
   `warning/actions/action_map.csv` 에 적고, build_inputs.py 가 둘을 합친다.
 """
@@ -76,10 +77,12 @@ def load_filtered(start=None):
 
 
 def load_unfiltered_line2(filtered_ids, start=None):
-    """'전체' 시트의 2라인 기록 중 필터 시트에 없는 것. 놓친 후보 확인용."""
+    """최신 전체 업무에서 필터에 아직 없는 2라인 기록을 찾는다."""
     start = start or paths.REVIEW_START
-    df = read_sheet("전체")
-    line2 = df["라인번호"].astype(str).str.fullmatch(r"2")
+    df = pd.read_csv(paths.JOURNAL_CSV, encoding="utf-8-sig",
+                     dtype={"작업ID": str, "라인번호": str})
+    df["작업일"] = pd.to_datetime(df["작업일"], format="%Y-%m-%d", errors="coerce")
+    line2 = df["라인번호"].eq("2")
     df = df[(df["작업일"] >= start) & line2 & ~df["작업ID"].isin(filtered_ids)][KEEP_COLS].copy()
     df["sheet_src"] = "전체"
     return df

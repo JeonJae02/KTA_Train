@@ -7,7 +7,7 @@
     warning/actions/actions_conveyor.csv   작업ID 한 행, 일지 원본 열 + action_map 열
     warning/actions/actions_pump.csv
     warning/actions/actions_etc.csv
-    warning/actions/line2_unfiltered.csv   '전체' 시트의 2라인 기록 중 필터 시트·action_map 에 없는 것 (참고)
+    warning/actions/line2_unfiltered.csv   최신 전체 업무 CSV 중 필터 시트·action_map 에 없는 2라인 기록 (참고)
     warning/episodes/warning_events.csv    경고 이벤트 한 줄 = 한 행 (KST, 중복 제거)
     warning/episodes/warning_episodes.csv  경고 한 건 = 한 행
 

@@ -26,6 +26,7 @@ def version_at(t):
 
 WARNING_DIR = ROOT / "warning"
 FILTERING_XLSX = WARNING_DIR / "filtering.xlsx"     # 실무자 일지 원본 — 읽기 전용
+JOURNAL_CSV = DB_LOG / "기계실_공무반_정리" / "02_전체업무.csv"
 WARNINGS_JSONL_DIR = WARNING_DIR / "predictive_warnings"
 
 ACTIONS_DIR = WARNING_DIR / "actions"               # build_inputs.py 가 만든다
