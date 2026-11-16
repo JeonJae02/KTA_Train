@@ -69,6 +69,28 @@ def build_actions():
     print(f"  {f.relative_to(paths.ROOT)}: {len(rest)}행 (필터에서 빠진 2라인 기록 — 참고용)")
 
 
+def keep_ids(ep, prev_path):
+    """이전 표에 있던 경고는 그 번호를 그대로 쓴다 — 라벨 파일이 번호로 경고를 가리키기 때문이다.
+
+    (kind, key, onset) 이 같으면 같은 경고로 본다. 새 경고만 이전 최대 번호 다음부터 시작 시각 순으로 받는다.
+    """
+    if not prev_path.exists():
+        return ep
+    prev = pd.read_csv(prev_path, usecols=["episode_id", "kind", "key", "onset"], dtype=str)
+    sig = lambda d: d["kind"].astype(str) + "|" + d["key"].astype(str) + "|" + pd.to_datetime(d["onset"]).astype(str)
+    old = dict(zip(sig(prev), prev["episode_id"]))
+    ids = sig(ep).map(old)
+    n0 = int(prev["episode_id"].str[1:].astype(int).max())
+    new = ids.isna()
+    ids[new] = [f"W{n0 + i:04d}" for i in range(1, int(new.sum()) + 1)]
+    gone = set(prev["episode_id"]) - set(ids)
+    if gone:
+        print(f"❗ 이전 표에 있었는데 이번에 없는 경고 {len(gone)}건 (라벨 확인): {sorted(gone)[:10]}")
+    ep = ep.drop(columns="episode_id")
+    ep.insert(0, "episode_id", ids.values)
+    return ep
+
+
 def build_warnings():
     paths.EPISODES_DIR.mkdir(parents=True, exist_ok=True)
     ev = W.load_events()
@@ -78,6 +100,7 @@ def build_warnings():
 
     ep = W.build_episodes(ev)
     f = paths.EPISODES_DIR / "warning_episodes.csv"
+    ep = keep_ids(ep, f)
     ep.to_csv(f, index=False, encoding="utf-8-sig")
     in_review = ep[ep["last_detected"] >= paths.REVIEW_START]
     print(f"  {f.relative_to(paths.ROOT)}: {len(ep)}건 (검토 기간에 걸친 것 {len(in_review)}건)")

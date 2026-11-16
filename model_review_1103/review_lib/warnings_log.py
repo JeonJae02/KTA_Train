@@ -198,6 +198,7 @@ def build_episodes(ev):
     # 로그 시작(10-15) 전에 이미 떠 있던 경고는 raised 가 없다 → onset 이 진짜 시작이 아닐 수 있음
     ep["onset_before_log"] = ~ep["has_raised"]
     ep["duration_h"] = (ep["last_detected"] - ep["onset"]).dt.total_seconds() / 3600
-    ep = ep.sort_values("onset").reset_index(drop=True)
+    # 시작 시각이 같은 경고(재시작 순간 등)는 kind·key 로 순서를 고정한다 — 로그를 추가해도 번호가 바뀌지 않게
+    ep = ep.sort_values(["onset", "kind", "key"], kind="stable").reset_index(drop=True)
     ep.insert(0, "episode_id", [f"W{i:04d}" for i in range(1, len(ep) + 1)])
     return ep
