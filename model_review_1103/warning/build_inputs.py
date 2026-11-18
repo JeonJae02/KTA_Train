@@ -7,7 +7,7 @@
     warning/actions/actions_conveyor.csv   작업ID 한 행, 일지 원본 열 + action_map 열
     warning/actions/actions_pump.csv
     warning/actions/actions_etc.csv
-    warning/actions/line2_unfiltered.csv   '전체' 시트의 2라인 기록 중 필터 시트·action_map 에 없는 것 (참고)
+    warning/actions/line2_unfiltered.csv   최신 전체 업무 CSV 중 필터 시트·action_map 에 없는 2라인 기록 (참고)
     warning/episodes/warning_events.csv    경고 이벤트 한 줄 = 한 행 (KST, 중복 제거)
     warning/episodes/warning_episodes.csv  경고 한 건 = 한 행
 
@@ -34,6 +34,15 @@ def build_actions():
     extra_ids = set(amap["작업ID"]) - set(filt["작업ID"])
     extra = whole[whole["작업ID"].isin(extra_ids)][A.KEEP_COLS].copy()
     extra["sheet_src"] = "전체"
+    # filtering.xlsx 이후에 들어온 일지(11-09 ~)는 최신 전체 업무 CSV에서. 같은 작업ID가 여러 라인이면 2라인 행
+    late_ids = extra_ids - set(extra["작업ID"])
+    if late_ids:
+        j = pd.read_csv(paths.JOURNAL_CSV, encoding="utf-8-sig", dtype={"작업ID": str, "라인번호": str})
+        j["작업일"] = pd.to_datetime(j["작업일"], format="%Y-%m-%d", errors="coerce")
+        j = j[j["작업ID"].isin(late_ids)].assign(_l2=lambda d: d["라인번호"].ne("2"))
+        j = j.sort_values(["작업ID", "_l2"]).drop_duplicates("작업ID")[A.KEEP_COLS].copy()
+        j["sheet_src"] = "전체업무CSV"
+        extra = pd.concat([extra, j], ignore_index=True)
     extra["sheet_domain"] = None
     df = pd.concat([filt, extra], ignore_index=True)
 
@@ -60,6 +69,28 @@ def build_actions():
     print(f"  {f.relative_to(paths.ROOT)}: {len(rest)}행 (필터에서 빠진 2라인 기록 — 참고용)")
 
 
+def keep_ids(ep, prev_path):
+    """이전 표에 있던 경고는 그 번호를 그대로 쓴다 — 라벨 파일이 번호로 경고를 가리키기 때문이다.
+
+    (kind, key, onset) 이 같으면 같은 경고로 본다. 새 경고만 이전 최대 번호 다음부터 시작 시각 순으로 받는다.
+    """
+    if not prev_path.exists():
+        return ep
+    prev = pd.read_csv(prev_path, usecols=["episode_id", "kind", "key", "onset"], dtype=str)
+    sig = lambda d: d["kind"].astype(str) + "|" + d["key"].astype(str) + "|" + pd.to_datetime(d["onset"]).astype(str)
+    old = dict(zip(sig(prev), prev["episode_id"]))
+    ids = sig(ep).map(old)
+    n0 = int(prev["episode_id"].str[1:].astype(int).max())
+    new = ids.isna()
+    ids[new] = [f"W{n0 + i:04d}" for i in range(1, int(new.sum()) + 1)]
+    gone = set(prev["episode_id"]) - set(ids)
+    if gone:
+        print(f"❗ 이전 표에 있었는데 이번에 없는 경고 {len(gone)}건 (라벨 확인): {sorted(gone)[:10]}")
+    ep = ep.drop(columns="episode_id")
+    ep.insert(0, "episode_id", ids.values)
+    return ep
+
+
 def build_warnings():
     paths.EPISODES_DIR.mkdir(parents=True, exist_ok=True)
     ev = W.load_events()
@@ -69,6 +100,7 @@ def build_warnings():
 
     ep = W.build_episodes(ev)
     f = paths.EPISODES_DIR / "warning_episodes.csv"
+    ep = keep_ids(ep, f)
     ep.to_csv(f, index=False, encoding="utf-8-sig")
     in_review = ep[ep["last_detected"] >= paths.REVIEW_START]
     print(f"  {f.relative_to(paths.ROOT)}: {len(ep)}건 (검토 기간에 걸친 것 {len(in_review)}건)")
