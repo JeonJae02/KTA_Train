@@ -84,7 +84,9 @@ SIGNAL_KEYS = ["stop_sol", "nozzle_sol", "return_sol", "open_sol", "org", "flt",
                "nozzle_rev", "rev_latch"]
 
 #: 지표별 기준 (장기 기준값, 날짜 간 흔들림 σ) — **엣지가 재는 방식**으로 잰 값 (2026-11-20, model_review_1103/con_check/stepwise).
-#:   DB 원시에 엣지 예지 엔진의 0.5초 스로틀을 걸어 이 코드에 흘린 가동일 평균, 10-14 ~ 10-24 (10 가동일).
+#:   DB 원시에 엣지 예지 엔진의 0.5초 스로틀을 걸어 이 코드에 흘린 가동일 평균, 10-14 ~ 11-14 (27 가동일).
+#:   (재생 검증은 10-14 ~ 10-24 10일 기준으로 했다. 배포용은 σ 를 안정적으로 잡으려고 기간을 늘렸다 — 기준값 이동은 대부분 1σ 안,
+#:    σ 는 4개 지표가 1.3배 넘게 커짐. 에어백 복귀 시간의 10-19 ~ 20 계단(0.61 → 0.57초)은 새 정상으로 들어간다)
 #:   엣지 측정에는 스로틀로 빠진 메시지 때문에 치우침이 있다(주입 시간 +0.045초 등). 기준도 같은 방식으로 잡아 상쇄한다.
 #:   이 재생은 엣지 자신의 가동일 기록과 지표 평균 0.11σ 안으로 맞는다.
 #:   10-14 부터인 이유: 현장 PC 메시지 간격이 10-09 ~ 14 무렵 0.522 → 0.515초로 바뀌어 스로틀이 건너뛰는 비율이
@@ -93,16 +95,16 @@ SIGNAL_KEYS = ["stop_sol", "nozzle_sol", "return_sol", "open_sol", "org", "flt",
 #: 예전 값(09-10 ~ 12 처음 3일, DB)은 md_fwd 9-12 정비 전이라 주입 0.899초·끌림 15.28카운트·복귀 0.395초였다.
 #: md_rev 스톱퍼 후진은 9월 중순 +0.01초 계단 뒤 값을 새 정상으로 둔다 (2026-11-20 결정).
 UNIT_REF = {
-    "md_fwd": {"stop_fwd_start": (0.1315, 0.0030), "stop_fwd_time": (0.2732, 0.0042), "stop_rev_start": (0.1846, 0.0047),
-               "stop_rev_time": (0.3684, 0.0030), "nozzle_fwd_start": (0.1158, 0.0030), "nozzle_rev_time": (0.3175, 0.0061),
-               "return_time": (0.3461, 0.0081), "catch_cnt": (6.4956, 0.1), "drag_cnt": (12.3314, 0.1), "air_time": (0.6752, 0.0065)},
-    "md_rev": {"stop_fwd_start": (0.1325, 0.0044), "stop_fwd_time": (0.2944, 0.0067), "stop_rev_start": (0.1854, 0.0044),
-               "stop_rev_time": (0.3640, 0.0030), "nozzle_fwd_start": (0.1256, 0.0030), "nozzle_rev_time": (0.3101, 0.0030),
-               "return_time": (0.7377, 0.0080), "catch_cnt": (12.7241, 0.1), "drag_cnt": (15.2374, 0.1), "air_time": (0.9071, 0.0045)},
-    "airbag": {"stop_fwd_start": (0.1227, 0.0032), "stop_fwd_time": (0.2638, 0.0049), "stop_rev_start": (0.1640, 0.0035),
-               "stop_rev_time": (0.3248, 0.0072), "nozzle_fwd_start_1": (0.1160, 0.0043), "nozzle_fwd_start_2": (0.1036, 0.0034),
-               "nozzle_rev_time_1": (0.3029, 0.0033), "nozzle_rev_time_2": (0.3231, 0.0050), "return_time": (0.5984, 0.0156),
-               "catch_cnt": (6.7095, 0.1), "drag_cnt": (32.3676, 0.1), "air_time": (2.5091, 0.0114)},
+    "md_fwd": {"stop_fwd_start": (0.1320, 0.0030), "stop_fwd_time": (0.2737, 0.0043), "stop_rev_start": (0.1825, 0.0044),
+               "stop_rev_time": (0.3684, 0.0030), "nozzle_fwd_start": (0.1145, 0.0030), "nozzle_rev_time": (0.3204, 0.0046),
+               "return_time": (0.3518, 0.0048), "catch_cnt": (6.4802, 0.1), "drag_cnt": (12.3132, 0.1), "air_time": (0.6738, 0.0067)},
+    "md_rev": {"stop_fwd_start": (0.1340, 0.0030), "stop_fwd_time": (0.2961, 0.0063), "stop_rev_start": (0.1850, 0.0031),
+               "stop_rev_time": (0.3651, 0.0030), "nozzle_fwd_start": (0.1281, 0.0030), "nozzle_rev_time": (0.3138, 0.0030),
+               "return_time": (0.7423, 0.0051), "catch_cnt": (12.7065, 0.1), "drag_cnt": (15.2308, 0.1), "air_time": (0.9055, 0.0064)},
+    "airbag": {"stop_fwd_start": (0.1236, 0.0051), "stop_fwd_time": (0.2658, 0.0061), "stop_rev_start": (0.1684, 0.0039),
+               "stop_rev_time": (0.3282, 0.0057), "nozzle_fwd_start_1": (0.1172, 0.0046), "nozzle_fwd_start_2": (0.1040, 0.0048),
+               "nozzle_rev_time_1": (0.3026, 0.0044), "nozzle_rev_time_2": (0.3211, 0.0057), "return_time": (0.5735, 0.0068),
+               "catch_cnt": (6.7084, 0.1), "drag_cnt": (32.3808, 0.1), "air_time": (2.5031, 0.0146)},
 }
 
 
