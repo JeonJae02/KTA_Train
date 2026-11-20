@@ -1,6 +1,6 @@
 """HDI_MODEL/conveyor_models (수정본) 확인 — 엣지 모니터(ConveyorMonitor)가 그 패키지를 쓰게 끼워 넣고 20 가동일 재생.
 
-harness.py S3 와 같은 조건: 0.5초 스로틀 입력, 코어 기록 = 엣지 기록 중 10-26 전, 유닛 기록 = 09-22 ~ 10-24 DB 시드.
+harness.py S3 와 같은 조건: 0.5초 스로틀 입력, 코어 기록 = 엣지 기록 중 10-26 전, 유닛 기록 = HDI_MODEL/conveyor_models/data(엣지 방식 재생) 중 10-26 전.
 판정 속도만 harness.FastCore 와 같은 방법(지난날 판정 캐시)으로 바꾼다 — evaluate 로직은 v2.2 와 같아 그대로 유효하다.
 결과: out/ep_HDI_throttle.pkl → score.py HDI 로 점수.
 """
@@ -27,7 +27,10 @@ with redirect_stdout(StringIO()):
     import tools_yeji.conveyor_models.unit_params as up
     import tools_yeji.Conveyor_Monitor as cmon
 assert Path(cr.__file__).parent == PKG, cr.__file__
-assert up.MAX_GAP == 0.75
+TAG = sys.argv[1] if len(sys.argv) > 1 else "HDI"
+if len(sys.argv) > 2 and sys.argv[2] == "daily":          # 비교용: 슬라이딩 끄고 하루 마감만
+    import tools_yeji.conveyor_models.unit_realtime as _ur
+    _ur.ROLL_BLOCKS = 10 ** 9
 import harness as H                       # _loop · _classify · rows_of 만 쓴다 (v2.2 core_judge 와 같은 로직)
 
 
@@ -59,12 +62,13 @@ core = Fast(history_path=None)
 hist = json.load(open(ROOT / "v2_2_1/backend/data/conveyor_core_history.json"))
 core.history = [{**r, "day": pd.Timestamp(r["day"])} for r in hist if r["day"] < "2026-10-26"]
 mon._rt.core = core
-seed = pickle.load(open(ROOT / "con_check/stepwise/out/seed_units_S3.pkl", "rb"))
+# 유닛 기록: HDI_MODEL/conveyor_models/data (엣지 방식으로 다시 만든 기록) 중 10-26 전
 for u, m in mon._rt.units.items():
-    m.history = [r for r in seed if r["unit"] == u]
+    h = json.load(open(PKG / "data" / f"conveyor_unit_{u}_history.json"))
+    m.history = [{**r, "day": pd.Timestamp(r["day"])} for r in h if r["day"] < "2026-10-26"]
 
 tags = db.model_tags("conveyor", "v2.2")
-eps, kept = {}, None
+eps, kept, obs, last_eval = {}, None, [], None
 for day in pd.date_range("2026-10-26", "2026-11-14"):
     for t, row in H.rows_of(day, tags):
         if kept is not None and (t - kept).total_seconds() < 0.5:
@@ -80,6 +84,13 @@ for day in pd.date_range("2026-10-26", "2026-11-14"):
             if w["message"] not in e["messages"]:
                 e["messages"].append(w["message"])
             e["sev"] = max(e["sev"], w["sev"] or 0)
-    print("HDI", day.date(), len(eps), flush=True)
-pd.DataFrame(eps.values()).to_pickle(ROOT / "con_check/stepwise/out/ep_HDI_throttle.pkl")
+        if mon._rt.last_eval is not None and mon._rt.last_eval != last_eval:
+            last_eval = mon._rt.last_eval
+            for u, m in mon._rt.units.items():
+                for it in m.result.get("items", []):
+                    obs.append(dict(t=t, unit=u, metric=it["metric"], state=it["state"], sev=it["sev"], basis=m.result["basis"]))
+    print(TAG, day.date(), len(eps), flush=True)
+pd.DataFrame(eps.values()).to_pickle(ROOT / f"con_check/stepwise/out/ep_{TAG}_throttle.pkl")
+pd.DataFrame(obs).to_pickle(ROOT / f"con_check/stepwise/out/unitobs_{TAG}.pkl")   # 유닛 관찰 이상(빨라짐 포함) 흔적
+
 print("done")

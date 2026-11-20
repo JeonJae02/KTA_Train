@@ -4,14 +4,17 @@
     (켜짐 길이 "엣지가 김" 25%, md_fwd 주입 시간 0.67 ~ 0.69초). 수정본의 새 유닛 기준(md_fwd 주입 0.6277 ± 0.0066초)으로
     이 기록을 판정하면 배포 첫날 "느려짐" 오경보가 난다 (z +6 ~ +10).
 무엇을: FROM 이전 날은 입력 기록 그대로 두고, FROM ~ TO 는 DB 원시 전부(스로틀 없음)를 수정본에 흘려
-        하루 마감 값으로 바꾼다. 입력 기록에서 TO 뒤의 날은 버린다 (다시 만들 수 없는 치우친 값이라).
+        하루 마감 값으로 바꾼다. 입력 기록에서 TO 뒤의 날은 버린다 (다시 만들 수 없는 치우친 값이라). 원시가 없어 못 만든 날은 입력 그대로 둔다.
 
 사용 (DB_Log/ 에서):
-  venv/bin/python HDI_MODEL/conveyor_rebuild_history.py <입력 data 폴더> <출력 폴더> <FROM> <TO>
+  venv/bin/python HDI_MODEL/conveyor_rebuild_history.py <입력 data 폴더> <출력 폴더> <FROM> <TO> [throttle]
   예) venv/bin/python HDI_MODEL/conveyor_rebuild_history.py model_review_1103/v2_2_1/backend/data \
          HDI_MODEL/conveyor_models/data 2026-10-26 2026-11-14
   - 날짜는 가동일(06시 시작). TO 가동일은 TO+1 날 06시까지라 TO+1 원시도 필요하다.
   - 원시는 model_review_1103 의 review_lib.db 캐시(cache/raw/conveyor)를 쓰고, 없으면 현장 DB 에서 하루씩 뽑는다.
+    캐시 전용(--cache-only, 기본)일 때 원시가 없는 날은 다시 만들지 않고 입력 기록을 그대로 둔다.
+  - throttle: 엣지 예지 엔진처럼 직전 처리 뒤 0.5초가 안 된 메시지를 건너뛰고 흘린다 (엣지가 실제로 재는 방식).
+    유닛 기준(UNIT_REF)을 엣지 방식으로 잡았으므로 기록도 이 방식으로 만든다.
 """
 import importlib.util, json, os, sys
 from contextlib import redirect_stdout
@@ -45,30 +48,44 @@ def load(path):
         return json.load(f)
 
 
-def main(src, dst, d_from, d_to):
+def has_raw(day):
+    f = db.paths.CACHE_DIR / "raw" / "conveyor"
+    return (f / f"{day:%Y-%m-%d}.pkl.xz").exists() and (f / f"{day + pd.Timedelta(days=1):%Y-%m-%d}.pkl.xz").exists()
+
+
+def main(src, dst, d_from, d_to, throttle=False, cache_only=True):
     d_from, d_to = pd.Timestamp(d_from), pd.Timestamp(d_to)
     assert Path(cr.__file__).parent == HERE / "conveyor_models", cr.__file__
     g = ConveyorRealtimeGroup(data_dir=None)
     g.evaluate = lambda t: None               # 판정은 필요 없다 — 하루 마감 값만
     tags = db.model_tags("conveyor", "v2.2")
+    done, kept = set(), None
     for day in pd.date_range(d_from, d_to):
+        if cache_only and not has_raw(day):
+            print("원시 없음 — 입력 기록 유지", day.date())
+            continue
+        done.add(f"{day:%Y-%m-%d}")
         d0 = day + pd.Timedelta(hours=6)
         raw = pd.concat([db.fetch_day(day, tags, "conveyor"), db.fetch_day(day + pd.Timedelta(days=1), tags, "conveyor")])
         raw = raw[(raw.index >= d0) & (raw.index < d0 + pd.Timedelta(days=1))]
         cols = [c for c in raw.columns if c != "source"]
         for t, v in zip(raw.index, raw[cols].to_numpy(dtype=object)):
+            if throttle:
+                if kept is not None and (t - kept).total_seconds() < 0.5:
+                    continue
+                kept = t
             g.update(t, {k: x for k, x in zip(cols, v) if x is not None and x == x})
         print("재생", day.date(), flush=True)
     g.core.close_day()
     for m in g.units.values():
         m.close_day()
 
-    keep = lambda rows: [r for r in rows if r["day"] < f"{d_from:%Y-%m-%d}"]
+    keep = lambda rows: [r for r in rows if r["day"] not in done and r["day"] <= f"{d_to:%Y-%m-%d}"]
     fmt = lambda rows: [{**r, "day": pd.Timestamp(r["day"]).strftime("%Y-%m-%d")} for r in rows]
-    new_core = [r for r in fmt(g.core.history) if f"{d_from:%Y-%m-%d}" <= r["day"] <= f"{d_to:%Y-%m-%d}"]
+    new_core = [r for r in fmt(g.core.history) if r["day"] in done]
     out = {CORE_FILE: keep(load(Path(src) / CORE_FILE)) + new_core}
     for u, m in g.units.items():
-        new_u = [r for r in fmt(m.history) if f"{d_from:%Y-%m-%d}" <= r["day"] <= f"{d_to:%Y-%m-%d}"]
+        new_u = [r for r in fmt(m.history) if r["day"] in done]
         out[UNIT_FILE.format(u)] = keep(load(Path(src) / UNIT_FILE.format(u))) + new_u
     os.makedirs(dst, exist_ok=True)
     for name, rows in out.items():
@@ -80,4 +97,4 @@ def main(src, dst, d_from, d_to):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:5])
+    main(*sys.argv[1:5], throttle=len(sys.argv) > 5 and sys.argv[5] == "throttle")
