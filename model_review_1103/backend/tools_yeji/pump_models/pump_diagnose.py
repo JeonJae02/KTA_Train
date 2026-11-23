@@ -1,6 +1,13 @@
 # tools_yeji/pump_models/pump_diagnose.py
 """펌프 진단 — 창 판정 결과를 "어디가 왜" 로 해석해 경보 목록으로 낸다.
 
+    classify_all (+ 헤드)   이 사이클 창에서 증거 E 이상인 사유 전부. 우선순위로 고르지 않는다
+      └ PersistFilter       (펌프, 사유) 마다: 그날 누적 15분 이상 뜬 날이 생산일 3일 연속이면 확정 (pump_persist.py)
+         └ alerts()         확정 사유 중 우선순위로 하나 → 아래 경보 형식 그대로. pattern 은 안 띄운다
+
+지속 필터는 사유 이름만 보고 시간을 센다 — RULES·evidence 를 고쳐도 필터는 손댈 필요가 없다.
+show=True 는 운영일마다 (펌프, 사유) 가 처음 나갈 때. 덧붙는 필드 codes (확정 사유 전부, 우선순위 순), streak (연속 생산일).
+
 규칙표·문구표는 RULES. 경보 {reason, priority, type, message, show, pumps, part}
 (+ 참고 필드 pump, head, level, evidence, label, relay, relay_fallback). 근무 단위 유지는 Pump_Monitor 가 한다.
 relay(헤드 SOL·PT 릴레이 주소)는 채워만 둔다 — 나중에 헤드 판정을 헤드 SOL 마커에도 띄울 때 쓸 자리.
@@ -13,11 +20,15 @@ import pandas as pd
 
 from config.topology_config import RELAY_CONFIG
 from tools_yeji.pump_models.pump_params import load_settings
+from tools_yeji.pump_models.pump_persist import PersistFilter, op_day
 
 E = 0.5                     # 판정 최소 증거 (정상 한계의 절반, 창 10사이클 중앙값 기준)
 STRONG = 5.0                # 유량계 "고장" 으로 올리는 증거
 COMMON_WINDOW_MIN = 30      # 여러 펌프 동시 판정 창
 COMMON_MIN_PUMPS = 3
+#: 지속 필터 (pump_persist.py) — 그날 그 사유로 알림 누적 15분 이상인 날이 생산일 3일 연속이면 확정 (2026-11-23 한 달 재생)
+PERSIST = {"min_minutes": 15, "days": 3, "min_cycles": 100, "max_gap_sec": 300, "bypass": ("flowmeter_fail",)}
+HIDDEN = {"pattern"}        # 띄우지 않는 사유 — 무엇을 하라는 말이 없다
 
 
 # --------------------------------------------------------------------------- #
@@ -78,7 +89,7 @@ def evidence(z):
 
 
 def classify(z):
-    """창 중앙 zn → (규칙 코드, 증거). 펌프 하나만 보고 정한다."""
+    """창 중앙 zn → (규칙 코드, 증거). 펌프 하나만 보고 증거가 가장 큰 것 하나 — 확인용 (경보는 classify_all)."""
     if not z:
         return "pattern", {}
     ev = evidence(z)
@@ -86,6 +97,18 @@ def classify(z):
         return "flowmeter_fail", ev
     code = max(ev, key=ev.get)
     return (code if ev[code] >= E else "pattern"), ev
+
+
+def classify_all(z):
+    """창 중앙 zn → (증거 E 이상인 사유 전부, 증거). 하나로 고르지 않는다 — 우선순위 높은 사유가 낮은 사유의
+    연속성을 가리지 않게, 지속 필터에는 전부 넘기고 고르는 건 띄울 때 한다. 아무것도 없으면 빈 집합 (pattern 없음)."""
+    if not z:
+        return set(), {}
+    ev = evidence(z)
+    codes = {k for k, v in ev.items() if v >= E}
+    if ev["flowmeter_low"] >= STRONG:
+        codes.add("flowmeter_fail")
+    return codes, ev
 
 
 # --------------------------------------------------------------------------- #
@@ -120,68 +143,100 @@ class RelayResolver:
 # 진단기
 # --------------------------------------------------------------------------- #
 class PumpDiagnoser:
-    """펌프마다 최신 창 결과를 들고, alerts() 에서 헤드 묶기·동시 판정을 더해 릴레이 경보를 낸다."""
+    """사이클마다 ① 사유 전부 뽑기(classify_all + 헤드) → ② 지속 필터(PersistFilter) → alerts() 에서 ③ 우선순위로 하나 골라
+    릴레이 경보 형식으로 낸다. ①·③ 은 규칙이 바뀌면 같이 바뀌고, ② 는 사유 이름만 보므로 그대로 둔다."""
 
-    def __init__(self, settings=None):
+    def __init__(self, settings=None, persist=None, persist_path=None):
         s = settings or load_settings()
         self.slot = {p: (v["head"], v["slot"]) for p, v in s["pumps"].items()}
         self.name = {p: v["name"] for p, v in s["pumps"].items()}
         self.resolve = RelayResolver()
-        self.state = {}                                     # pump -> {level, z, code, ev, show_pending, t}
-        self.recent = deque(maxlen=500)                     # (t, pump, code) — 동시 판정
+        self.persist = persist or PersistFilter(**PERSIST, state_path=persist_path)
+        self.state = {}                                     # pump -> {z, code, codes, confirmed, ev, t, od} (알림 등급일 때만)
+        self.recent = deque(maxlen=500)                     # (t, pump, code) — 동시 판정 (띄운 경보 기준)
+        self._shown = set()                                 # (운영일, 펌프들, 사유) — 그날 이미 show=True 로 낸 것
 
     def update(self, pump, w, t):
-        """w: WindowTracker.update 결과. 알림 등급이 아니면 그 펌프 상태를 비운다."""
+        """w: WindowTracker.update 결과. 자동운전 사이클마다 부른다 — 정상 사이클도 지속 필터의 시간·생산일 계산에 쓴다."""
         t = pd.Timestamp(t)
-        if w.get("pump_level") != "알림":
+        alert = w.get("pump_level") == "알림"
+        codes, ev = classify_all(w.get("zn_med")) if alert else (set(), {})
+        if alert:
+            # 헤드: 짝도 알림 상태이고 같은 방향 저항이 떠 있으면 헤드 사유를 더한다 (배관 사유도 그대로 둔다 — 띄울 때 헤드가 이긴다)
+            partner = self._partner(pump)
+            ps = self.state.get(partner) if partner else None
+            for d in ("high", "low"):
+                if ps and f"line_resistance_{d}" in codes and f"line_resistance_{d}" in ps["codes"]:
+                    codes.add(f"head_resistance_{d}")
+        confirmed = self.persist.update(pump, codes, t)
+        if not alert:
             self.state.pop(pump, None)
             return
-        code, ev = classify(w.get("zn_med"))
-        prev = self.state.get(pump, {})
-        self.state[pump] = {"z": w.get("zn_med") or {}, "code": code, "ev": ev, "t": t,
-                            "show_pending": prev.get("show_pending", False) or bool(w.get("notify"))}
-        if w.get("notify"):
-            self.recent.append((t, pump, code))
+        self.state[pump] = {"z": w.get("zn_med") or {}, "code": classify(w.get("zn_med"))[0], "codes": codes,
+                            "confirmed": confirmed, "ev": ev, "t": t, "od": op_day(t)}
 
     def _partner(self, pump):
         other = ("I" if pump.startswith("P") else "P") + pump[1:]
         return other if other in self.slot and self.slot[other] == self.slot.get(pump) else None
 
+    def _pick(self, pump, st):
+        """확정 사유 중 띄울 것 하나: 우선순위 → 같으면 오늘 오래 뜬 쪽. 없으면 None."""
+        cand = [c for c in st["confirmed"] if c not in HIDDEN]
+        if not cand:
+            return None
+        mins = self.persist.minutes(pump, st["od"])
+        return min(cand, key=lambda c: (RULES[c]["priority"], -mins.get(c, 0)))
+
     def alerts(self, t):
-        """이번 tick 의 경보 목록 (릴레이 형식). show 는 운영일 첫 알림이 아직 안 나간 경우에만 True."""
+        """이번 tick 의 경보 목록 (릴레이 형식). 알림 등급이면서 확정 사유가 있는 펌프만.
+        show=True 는 운영일마다 (펌프, 사유) 가 처음 나갈 때 — Pump_Monitor 가 그때 띄우기 시작하고, 이후 show=False 로 유지 연장."""
         t = pd.Timestamp(t)
+        od = op_day(t)
+        # 확정은 그 운영일 것 — 마지막 사이클이 전 운영일인 펌프(멈춘 채 날이 바뀜)는 내지 않는다
+        top = {p: (self._pick(p, st) if st["od"] == od else None) for p, st in self.state.items()}
         out, done = [], set()
         for pump, st in sorted(self.state.items()):
-            if pump in done:
+            code = top[pump]
+            if pump in done or code is None:
                 continue
-            code, ev = st["code"], st["ev"]
-            partner = self._partner(pump)
-            ps = self.state.get(partner) if partner else None
-            # 헤드 묶기: 짝도 알림 상태이고 둘 다 같은 방향 저항 변화
-            if ps and code in ("line_resistance_high", "line_resistance_low") and ps["code"] == code:
-                hcode = code.replace("line_", "head_")
+            others = sorted((c for c in st["confirmed"] if c not in HIDDEN and c != code), key=lambda c: RULES[c]["priority"])
+            info = {"codes": [code] + others, "streak": self.persist.streak(pump, code, st["od"])}
+            if code.startswith("head_"):
+                partner = self._partner(pump)
+                ps = self.state.get(partner) if partner else None
                 head = self.slot[pump]
                 relay, fb = self.resolve("head", pump, head)
                 pol, iso = (pump, partner) if pump.startswith("P") else (partner, pump)
-                out.append(self._alert(hcode, relay, fb, pol, head, show=st["show_pending"] or ps["show_pending"],
-                                       ev={pump: ev.get(code), partner: ps["ev"].get(code)},
-                                       label=f"{head[0]}-{head[1]} {pol}·{iso}", pumps=[pol, iso]))
-                st["show_pending"] = ps["show_pending"] = False
-                done.update({pump, partner})
+                line = code.replace("head_", "line_")
+                out.append(self._alert(code, relay, fb, pol, head, show=self._first(st["od"], (pol, iso), code, pump, t),
+                                       ev={pump: st["ev"].get(line), partner: ps["ev"].get(line) if ps else None},
+                                       label=f"{head[0]}-{head[1]} {pol}·{iso}", pumps=[pol, iso], info=info))
+                done.add(pump)
+                if top.get(partner) == code:
+                    done.add(partner)
                 continue
             relay, fb = self.resolve(RULES[code]["part"], pump, self.slot[pump])
             n_same = len({p for (tt, p, c) in self.recent
                           if c == code and p != pump and abs((tt - st["t"]).total_seconds()) <= COMMON_WINDOW_MIN * 60})
-            out.append(self._alert(code, relay, fb, pump, self.slot[pump], show=st["show_pending"], ev=ev.get(code),
-                                   common=n_same + 1 if n_same + 1 >= COMMON_MIN_PUMPS else 0))
-            st["show_pending"] = False
+            out.append(self._alert(code, relay, fb, pump, self.slot[pump], show=self._first(st["od"], (pump,), code, pump, t),
+                                   ev=st["ev"].get(code), common=n_same + 1 if n_same + 1 >= COMMON_MIN_PUMPS else 0,
+                                   info=info))
             done.add(pump)
         return out
 
-    def _alert(self, code, relay, fallback, pump, head, show, ev, label=None, common=0, pumps=None):
+    def _first(self, od, pumps, code, pump, t):
+        """그 운영일에 (펌프들, 사유) 가 처음이면 True 로 기록하고 동시 판정 목록에 넣는다."""
+        key = (od, pumps, code)
+        if key in self._shown:
+            return False
+        self._shown = {k for k in self._shown if k[0] >= od} | {key}
+        self.recent.append((t, pump, code))
+        return True
+
+    def _alert(self, code, relay, fallback, pump, head, show, ev, label=None, common=0, pumps=None, info=None):
         r = RULES[code]
         msg = r["message"] + (COMMON_SUFFIX.format(n=common - 1) if common else "")
         return {"relay": relay, "reason": f"pump_{code}", "priority": r["priority"], "type": r["type"],
                 "message": msg, "show": bool(show),
                 "pump": pump, "pumps": pumps or [pump], "head": f"{head[0]}/{head[1]}", "part": r["part"], "level": "알림",
-                "evidence": ev, "relay_fallback": fallback, "label": label or self.name.get(pump, pump)}
+                "evidence": ev, "relay_fallback": fallback, "label": label or self.name.get(pump, pump), **(info or {})}

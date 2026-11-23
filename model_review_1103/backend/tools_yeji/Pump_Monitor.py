@@ -5,6 +5,8 @@ from tools_yeji.Fault_Registry import ActiveFaultRegistry
 from tools_yeji.common.time_utils import hold_until, to_kst, to_utc_iso
 from tools_yeji.pump_models.pump_realtime import PumpRealtimeGroup
 
+DATA_DIR = "./data"         #: 지속 필터 기록(pump_persist_history.json) 자리 — Conveyor_Monitor 와 같다
+
 #: 진단 부품 → 프론트 3D 마커 키 (useFaultParts.ts: Pump→metering_pump, Motor→motor, Inverter→inverter).
 #: 유량계·배관·헤드는 따로 마커가 없어 펌프에 띄운다 — 무엇인지는 message 가 말한다.
 PART_DEVICE = {"flowmeter": "Pump", "pump": "Pump", "pressure": "Pump", "head": "Pump"}
@@ -24,8 +26,8 @@ class PumpMonitor:
       duration_sec, hold_until} 가 같은 dict 에 붙는다
     """
 
-    def __init__(self, pump_list=None):
-        self._rt = PumpRealtimeGroup(pump_list)
+    def __init__(self, pump_list=None, data_dir=DATA_DIR):
+        self._rt = PumpRealtimeGroup(pump_list, data_dir=data_dir)
         self.pump_list = list(pump_list or self._rt.pumps)
         self._faults = ActiveFaultRegistry()
         #: (pid, 사유) -> {device, type, message, priority, expires, last, active}. 근무 단위 유지 (_apply_hold)

@@ -11,6 +11,8 @@ tools_yeji/Pump_Monitor 가 하나 갖고 매 tick 부른다.
 자동운전 사이클만 판정·경보한다. 수동·점검 사이클은 참고 채점만, 알람 사이클·학습 범위 밖은 제외.
 수집 간격(백엔드 진단 모드 2초 틱 · 3초 넘는 공백)에 걸린 사이클도 참고 채점만 — pump_preprocess 의 가드.
 이 펌프만의 태그(BuildUp·SV·Hz·FT·PT)가 row 에 있을 때만 그 펌프 tick 을 진행한다.
+경보는 사유 전부 → 지속 필터(생산일 3일 연속) → 우선순위 하나 (pump_diagnose). 지속 기록은 data_dir/pump_persist_history.json
+(없으면 재시작 후 생산일 3일간 경보 없음).
 """
 # 자동 생성 — DB_Log/HDI_MODEL/relay_port/make_port.py. 원본: HDI_MODEL/Pump_Realtime_Model.py
 import os
@@ -26,6 +28,8 @@ from tools_yeji.pump_models.pump_params import (ASSET_DIR, BASELINE_DIR, PUMPS, 
                                                  load_settings, tag_aliases)
 from tools_yeji.pump_models.pump_preprocess import PumpProcessor, add_baseline_features
 
+PERSIST_FILE = "pump_persist_history.json"          #: 지속 필터 기록 (data_dir 안, 컨베이어 history 와 같은 자리)
+
 
 def _top_features(zn, k=3):
     """피처별 편차 zn → [{feature, share}] |zn| 큰 순 k 개. share = |zn| / Σ|zn|."""
@@ -39,7 +43,8 @@ def _top_features(zn, k=3):
 class PumpRealtimeGroup:
     """펌프 14대. update() 는 이번 tick 의 진단 경보 목록, status()/pump_scores() 는 펌프별 현재 상태."""
 
-    def __init__(self, pumps=None, settings=None, artifact_dir=None, baseline_dir=BASELINE_DIR, keep_cycles=2000):
+    def __init__(self, pumps=None, settings=None, artifact_dir=None, baseline_dir=BASELINE_DIR, keep_cycles=2000,
+                 data_dir=None):
         s = settings or load_settings()
         self.pumps = [p for p in (pumps or PUMPS) if p in s["pumps"]]
         self.setup = {p: PumpSetup(p, s, allow_unverified=True) for p in self.pumps}
@@ -47,7 +52,7 @@ class PumpRealtimeGroup:
         self.proc = {p: PumpProcessor(self.setup[p], self.base[p]) for p in self.pumps}
         self.scorer = CycleScorer.load(artifact_dir or ASSET_DIR)
         self.win = WindowTracker(self.scorer.meta)
-        self.diag = PumpDiagnoser(s)
+        self.diag = PumpDiagnoser(s, persist_path=os.path.join(data_dir, PERSIST_FILE) if data_dir else None)
         self.aliases = tag_aliases(s)
         self.tags = {p: set(self.setup[p].required_tags()) for p in self.pumps}
         # 이 펌프만의 태그(BuildUp·SV·Hz·FT·PT)가 row 에 있어야 tick 을 진행한다. 나머지(탱크 온도 — 같은 탱크 펌프끼리,
@@ -158,7 +163,8 @@ class PumpRealtimeGroup:
             d = self.diag.state.get(p)
             out[p] = {"state": self.tick_state[p], "last_mode": r.get("mode"), "cycle_level": r.get("level"),
                       "pump_level": r.get("pump_level"), "score": r.get("score"), "reason": r.get("window_reason"),
-                      "diagnosis": d["code"] if d else None, "last_cycle": r.get("t_start")}
+                      "diagnosis": d["code"] if d else None, "codes": sorted(d["codes"]) if d else [],
+                      "confirmed": sorted(d["confirmed"]) if d else [], "last_cycle": r.get("t_start")}
         return out
 
     def pump_scores(self):
