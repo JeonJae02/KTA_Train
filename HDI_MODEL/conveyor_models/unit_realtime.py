@@ -15,14 +15,18 @@ ConveyorRealtimeGroup 가 tick 마다 CoreRealtime.update 다음에 update(t, co
 
 ## 판정 (evaluate) — 최근 근무 구간 8개(= 하루치) 슬라이딩
 
-근무 구간은 공유 근무표(operation.json shifts, 8개)다. 구간이 끝날 때마다 그 구간 합계를 최근 ROLL_BLOCKS 개 창에 넣는다
-(휴게 중 사이클은 앞 구간, 사이클 BLOCK_MIN_CYCLES 미만 구간 — 주말·정지 — 은 넣지 않는다).
-판정: 마감된 가동일 기록 + "최근 8구간 평균" 한 줄 → unit_judge.cyl_judge (UNIT_REF 의 장기 기준·σ 로) → 지표별 상태.
+근무 구간은 공유 근무표(operation.json shifts, 8개)다. 구간이 끝날 때마다 그 구간 합계를 최근 ROLL_BLOCKS(= 근무 수) 개
+창에 넣는다 (휴게 중 사이클은 앞 구간, 사이클 BLOCK_MIN_CYCLES 미만 구간 — 주말·정지 — 은 넣지 않는다).
+판정은 두 단계다.
+  1) 마감된 가동일 기록만 → unit_judge.cyl_judge (UNIT_REF 의 장기 기준·σ 로). 승인(3 가동일)·장기 추세·지금 기준선이 여기서 정해진다.
+  2) "최근 8구간 평균" → 1) 의 마지막 기준선·σ 대비 z 만 본다 (미리보기). 승인 횟수에는 세지 않는다.
+     왜: 창은 어제 구간을 품고 있어서(06:00 직후엔 어제와 똑같다) 기록 뒤에 "하루"로 붙이면 어제가 두 번 세어져
+     3일 승인이 하루 일찍 나고 장기 추세도 어제 쪽으로 쏠린다.
   왜 8구간: 하루치라 σ(하루 평균 기준)를 그대로 쓰고, 시간대 구성이 늘 같아 아침 편향이 없다.
   큰 변화는 창의 일부만 바뀌어도 문턱을 넘어 몇 시간 안에 뜨고, 문턱 근처 변화는 창이 찰 때(약 하루)까지 모인다.
   예전 "오늘 평균"(2,000사이클 넘으면)은 아침 구간이 많이 섞여 오경보가 났다 (C-07).
-깜빡임 방지: 직전 판정에서 걸린 지표는 |z| 가 Z_CLEAR(4) 아래로 내려가야 푼다 (켜짐은 5).
-창이 아직 안 찼으면(처음 배포, 근무표 없음) 마감된 가동일 기록만 판정한다.
+깜빡임 방지: 직전 판정에서 걸린 지표는 |z| 가 Z_CLEAR(4) 아래로 내려가야 푼다 (켜짐은 5). 승인된 줄은 붙잡지 않는다.
+창이 아직 안 찼으면(처음 배포, 근무표 없음, 재시작 때 구간 파일이 BLOCK_MAX_AGE 보다 묵음) 마감된 가동일 기록만 판정한다.
 PLC 에러·알람은 다루지 않는다 — 정상 가동 중 동작 시간의 변화만 본다.
 하루 마감(오전 6시): 그날 평균을 기록에 더하고 저장한다. 승인(3 가동일)·장기 추세는 하루 기록으로 본다.
 
@@ -42,16 +46,20 @@ import pandas as pd
 from config.operation_config import SHIFTS
 
 from .core_params import RUN_TAG
-from .unit_judge import STATE_REASON, cyl_judge, item_reason, item_sev
+from .unit_judge import STATE_REASON, Z_TOL, cyl_judge, item_reason, item_sev, metric_kind
 from .unit_params import MAX_CYCLE, MAX_GAP, METRICS, UNIT_REF, bits, metric_columns, metric_part
 
 MIN_CYCLES_DAY = 1000     #: 하루 마감 때 이보다 적은 날은 기록하지 않는다 (배치와 같음)
 HISTORY_DAYS = 365        #: 하루 한 줄이라 길게 둔다 (승인된 변화가 기록에서 빠지지 않게)
-ROLL_BLOCKS = 8           #: 판정 창 = 최근 근무 구간 8개 (근무표 8구간 = 하루치)
 BLOCK_MIN_CYCLES = 200    #: 이보다 적은 구간(주말·정지·짧은 가동)은 창에 넣지 않는다
+#: 재시작 때 구간 파일에서 이보다 오래된 구간은 버린다. 서버가 꺼진 동안 라인이 돌았으면 묵은 창이 "지금"으로 판정된다.
+#: 4일 = 금요일 첫 구간이 월요일 아침 재시작까지 남는 길이 (주말을 넘겨도 창이 이어지게)
+BLOCK_MAX_AGE = pd.Timedelta(days=4)
 Z_CLEAR = 4.0             #: 걸렸던 지표는 |z| 가 이 아래로 내려가야 푼다 (켜짐은 unit_judge.Z_TOL 5)
 #: 근무 구간 시작 시각 (자정부터). 구간 = 이 시각부터 다음 시작 전까지 — 휴게 중 사이클은 앞 구간에 들어간다
 BLOCK_STARTS = sorted(pd.Timedelta(hours=int(s[:2]), minutes=int(s[3:5])) for s, _ in SHIFTS)
+#: 판정 창 = 최근 근무 구간 N개, N = 근무표의 근무 수 (= 하루치). 근무표가 바뀌어도 "하루치" 뜻이 유지되게 근무표에서 잡는다
+ROLL_BLOCKS = len(BLOCK_STARTS)
 
 
 def _num(v):
@@ -110,6 +118,7 @@ class UnitRealtime:
         bk = self._block_start(t)
         if self.block is None:
             self.block = bk
+            self._drop_stale_blocks(t)               # 첫 tick — 재시작 전 파일의 묵은 구간을 버린다
         elif bk is not None and bk != self.block:
             self._close_block()
             self.block = bk
@@ -191,8 +200,8 @@ class UnitRealtime:
         self.bcycles = 0
 
     def _roll_row(self):
-        """최근 ROLL_BLOCKS 구간 평균 한 줄 (판정용, 기록에는 안 들어간다). 창이 덜 찼으면 None."""
-        if len(self.blocks) < ROLL_BLOCKS:
+        """최근 ROLL_BLOCKS 구간 평균 한 줄 (판정용, 기록에는 안 들어간다). 창이 덜 찼거나 근무표가 없으면 None."""
+        if not ROLL_BLOCKS or len(self.blocks) < ROLL_BLOCKS:
             return None
         row = dict(unit=self.unit, day=pd.Timestamp(self.day), cycles=sum(b["cycles"] for b in self.blocks))
         for c in self.cols:
@@ -209,6 +218,14 @@ class UnitRealtime:
     def load_blocks(self, path):
         with open(path, encoding="utf-8") as f:
             self.blocks = deque(json.load(f), maxlen=ROLL_BLOCKS)
+
+    def _drop_stale_blocks(self, t):
+        """t - BLOCK_MAX_AGE 보다 먼저 시작한 구간을 버린다. 지금 시각은 첫 tick 에서야 알므로(재생 확인은 과거 시각) 여기서 한다."""
+        keep = [b for b in self.blocks if pd.Timestamp(b["start"]) >= pd.Timestamp(t) - BLOCK_MAX_AGE]
+        if len(keep) < len(self.blocks):
+            self.blocks = deque(keep, maxlen=ROLL_BLOCKS)
+            if self.blocks_path:
+                self.save_blocks(self.blocks_path)
 
     # ------------------------------------------------------------------ #
     # 하루 마감 · 기록
@@ -249,50 +266,82 @@ class UnitRealtime:
     # 판정
     # ------------------------------------------------------------------ #
     def evaluate(self):
-        rows = [r for r in self.history if r["day"] < pd.Timestamp(self.day)] if self.day else list(self.history)
-        basis = "전날까지"
+        hist = [r for r in self.history if r["day"] < pd.Timestamp(self.day)] if self.day else list(self.history)
         roll = self._roll_row()
-        if roll is not None:
-            rows = rows + [roll]
-            basis = f"최근 근무 {ROLL_BLOCKS}구간"
-        if not rows:
+        if not hist and roll is None:
             self.result = self.empty()
             return self.result
-        D = pd.DataFrame(rows)
-        J = cyl_judge(D[["unit", "day", "cycles"] + [c for c in self.cols if c in D]], refs=UNIT_REF)
-        day = J.day.max()
+        # 1) 승인·장기 추세·지금 기준선은 마감된 가동일 기록으로만
+        J = pd.DataFrame()
+        if hist:
+            D = pd.DataFrame(hist)
+            J = cyl_judge(D[["unit", "day", "cycles"] + [c for c in self.cols if c in D]], refs=UNIT_REF)
+        if roll is None:
+            basis, day, today = "전날까지", J.day.max(), None
+            rows = [dict(metric=r.metric, state=r.state, trend=r.trend, z=r.z) for r in J[J.day == day].itertuples()]
+        else:
+            # 2) 최근 8구간 평균은 1) 의 마지막 기준선 대비 z 만 (승인 횟수에는 안 센다)
+            basis, day = f"최근 근무 {ROLL_BLOCKS}구간", roll["day"]
+            today = day
+            rows = [p for p in (self._preview(J, c, roll[c]) for c in self.cols) if p is not None]
         items, sev, flagged = [], 0, {}
-        for r in J[J.day == day].itertuples():
-            s = item_sev(r.state, r.trend)
+        for r in rows:
+            m, z = r["metric"], r["z"]
+            s = item_sev(r["state"], r["trend"])
             if s > 0:
                 # 단기 상태(느려짐·빨라짐·거리 변화)가 없이 걸린 항목은 장기 추세("장기 기준보다 느림")가 상태다
-                it = dict(metric=r.metric, relay=metric_part(self.unit, r.metric)[2], sev=s,
-                          state=r.state if r.state in STATE_REASON else r.trend,
-                          reason=item_reason(r.metric, r.state, r.trend),
-                          since=self._since(J, r.metric, s))
-            elif r.metric in self.flagged and np.isfinite(r.z) and abs(r.z) >= Z_CLEAR \
-                    and np.sign(r.z) == np.sign(self.flagged[r.metric][1]):
-                it = self.flagged[r.metric][0]            # 문턱 바로 아래(4 ≤ |z| < 5) — 직전 경고를 유지한다
+                it = dict(metric=m, relay=metric_part(self.unit, m)[2], sev=s,
+                          state=r["state"] if r["state"] in STATE_REASON else r["trend"],
+                          reason=item_reason(m, r["state"], r["trend"]),
+                          since=self._since(J, m, s, today))
+            elif (r["state"] != "정상(승인)" and m in self.flagged and np.isfinite(z) and abs(z) >= Z_CLEAR
+                  and np.sign(z) == np.sign(self.flagged[m][1])):
+                # 문턱 바로 아래(4 ≤ |z| < 5) — 직전 경고를 유지한다. 승인된 줄은 z 가 승인 전 기준이라 붙잡지 않는다
+                it = self.flagged[m][0]
             else:
                 continue
             items.append(it)
             sev = max(sev, it["sev"])
             if it["state"] in STATE_REASON:
-                flagged[r.metric] = (it, r.z)
+                flagged[m] = (it, z)
         self.flagged = flagged
         items.sort(key=lambda x: -x["sev"])
         self.result = dict(ready=True, sev=sev, basis=basis, day=day.strftime("%m-%d"),
                            cycles_today=self.cycles, items=items)
         return self.result
 
+    def _preview(self, J, col, v):
+        """창 평균 v 를 기록의 마지막 기준선·σ 와 비교한 한 줄. 장기 추세는 기록 마지막 날 것을 그대로 쓴다.
+        기록에 그 지표가 없으면 UNIT_REF 의 장기 기준·σ 로. 둘 다 없으면 None."""
+        g = J[J.metric == col] if len(J) else J
+        if len(g):
+            last = g.sort_values("day").iloc[-1]
+            level, sig, trend = last.level, last.sigma, last.trend
+        elif col in UNIT_REF.get(self.unit, {}):
+            (level, sig), trend = UNIT_REF[self.unit][col], ""
+        else:
+            return None
+        z = (v - level) / sig
+        state = "정상"
+        if np.isfinite(z) and abs(z) >= Z_TOL:
+            state = ("느려짐" if z > 0 else "빨라짐") if metric_kind(col) == "s" else "거리 변화"
+        return dict(metric=col, state=state, trend=trend, z=z)
+
     @staticmethod
-    def _since(J, metric, sev_now):
-        g = J[J.metric == metric].sort_values("day")
-        sev = [item_sev(a, b) for a, b in zip(g.state, g.trend)]
+    def _since(J, metric, sev_now, today=None):
+        """같은 수준이 이어진 첫 날. today 를 주면(창 판정) 기록 뒤에 오늘을 sev_now 로 붙여서 센다."""
+        g = J[J.metric == metric].sort_values("day") if len(J) else J
+        days = list(g.day) if len(g) else []
+        sev = [item_sev(a, b) for a, b in zip(g.state, g.trend)] if len(g) else []
+        if today is not None:
+            days.append(today)
+            sev.append(sev_now)
+        if not days:
+            return None
         k = len(sev) - 1
         while k > 0 and sev[k - 1] == sev_now:
             k -= 1
-        return g.day.iloc[k].strftime("%m-%d") if len(g) else None
+        return days[k].strftime("%m-%d")
 
     def empty(self):
         return dict(ready=False, sev=None, basis=None, day=None, cycles_today=0, items=[])
